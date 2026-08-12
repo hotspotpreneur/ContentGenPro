@@ -13,6 +13,28 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================================
+// 🔒 SECURITY CHECK FOR IFrame (Added securely here)
+// ============================================================
+app.use((req, res, next) => {
+    // The secret key must match exactly what you put in your WordPress button
+    const SECRET_KEY = 'super_secret_12345'; 
+    
+    // Get the auth key from the URL (e.g. ?auth=...)
+    const authKey = req.query.auth;
+
+    // If the key is missing or wrong, block access!
+    if (authKey !== SECRET_KEY) {
+        return res.status(403).send("Access Denied. Please log in via our website.");
+    }
+
+    // This tells the browser it is allowed to be shown inside your WordPress site (iFrame)
+    res.setHeader('X-Frame-Options', 'ALLOWALL');
+    
+    next(); // Allow the request to continue to your API or HTML
+});
+// ============================================================
+
+// ============================================================
 // API ROUTE - Handle content generation
 // ============================================================
 app.post('/api/generate', async (req, res) => {
