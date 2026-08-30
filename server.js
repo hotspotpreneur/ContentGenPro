@@ -57,14 +57,15 @@ app.post('/api/generate', async (req, res) => {
                 'HTTP-Referer': 'https://contentgenpro.onrender.com',
                 'X-Title': 'ContentGenPro'
             },
-          body: JSON.stringify({
-    model: model || 'openai/gpt-4o-mini',
-    max_tokens: 4096,  // ← ADD THIS LINE
-    messages: [
-        { role: 'system', content: profile },
-        { role: 'user', content: input }
-    ]
-});
+            body: JSON.stringify({
+                model: model || 'openai/gpt-4o-mini',
+                max_tokens: 4096,
+                messages: [
+                    { role: 'system', content: profile },
+                    { role: 'user', content: input }
+                ]
+            })
+        });
 
         if (!response.ok) {
             const errorText = await response.text();
