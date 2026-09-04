@@ -37,7 +37,7 @@ app.post('/api/generate', async (req, res) => {
             },
             body: JSON.stringify({
                 model: model || 'openai/gpt-4o-mini',
-                max_tokens: 4096,
+                max_tokens: 16384,
                 messages: [
                     { role: 'system', content: profile },
                     { role: 'user', content: input }

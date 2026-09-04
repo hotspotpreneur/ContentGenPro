@@ -274,31 +274,54 @@
     return _tabs;
   };
 
-  /* --- EXTRACT JSON --- */
+  /* --- EXTRACT JSON (with truncated JSON repair) --- */
   const _ej = (txt) => {
     if (!txt || !txt.trim()) throw new Error('Empty response from API');
     try { return JSON.parse(txt); } catch(e) {}
     var _cbm = txt.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (_cbm) { try { return JSON.parse(_cbm[1].trim()); } catch(e) {} }
+    // Try extracting a complete JSON object (first { to last })
     var _jm = txt.match(/\{[\s\S]*\}/);
     if (_jm) {
       try {
-        var _cl = _jm[0].replace(/,\s*}/g,'}').replace(/,\s*]/g,']').replace(/([{,]\s*)(\w+)(\s*:)/g,'$1"$2"$3');
+        var _cl = _jm[0].replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
         return JSON.parse(_cl);
       } catch(e) {}
     }
-    try {
-      var _fx = txt.replace(/^```json\s*/,'').replace(/```\s*$/,'');
-      var _pm = _fx.match(/\{[\s\S]*/);
-      if (_pm) {
-        var _pt = _pm[0];
-        var _ob = (_pt.match(/\{/g)||[]).length;
-        var _cb2 = (_pt.match(/\}/g)||[]).length;
-        while (_cb2 < _ob) { _pt += '}'; _cb2++; }
-        return JSON.parse(_pt);
-      }
-    } catch(e) {}
-    throw new Error('Could not parse JSON. Raw preview: ' + txt.substring(0,300));
+    // --- Truncated JSON repair ---
+    var _si = txt.indexOf('{');
+    if (_si === -1) throw new Error('No JSON found in response. Raw preview: ' + txt.substring(0, 300));
+    var _s = txt.substring(_si);
+    // Check if we ended inside an unclosed string
+    var _inStr = false, _esc = false;
+    for (var i = 0; i < _s.length; i++) {
+      if (_esc) { _esc = false; continue; }
+      if (_s[i] === '\\' && _inStr) { _esc = true; continue; }
+      if (_s[i] === '"') _inStr = !_inStr;
+    }
+    if (_inStr) _s += '"';
+    // Remove trailing comma
+    _s = _s.replace(/,\s*$/, '');
+    // Close all unclosed [ and {
+    var _openSq = (_s.match(/\[/g) || []).length - (_s.match(/\]/g) || []).length;
+    var _openCr = (_s.match(/\{/g) || []).length - (_s.match(/\}/g) || []).length;
+    for (var j = 0; j < _openSq; j++) _s += ']';
+    for (var j = 0; j < _openCr; j++) _s += '}';
+    // Clean commas before closers
+    _s = _s.replace(/,\s*\]/g, ']').replace(/,\s*\}/g, '}');
+    try { return JSON.parse(_s); } catch(e) {}
+    // Last resort: truncate back to last complete key-value pair ending with ",
+    var _lc = _s.lastIndexOf('",');
+    if (_lc > _s.length * 0.3) {
+      var _t = _s.substring(0, _lc + 1).replace(/,\s*$/, '');
+      var _oSq = (_t.match(/\[/g) || []).length - (_t.match(/\]/g) || []).length;
+      var _oCr = (_t.match(/\{/g) || []).length - (_t.match(/\}/g) || []).length;
+      for (var j = 0; j < _oSq; j++) _t += ']';
+      for (var j = 0; j < _oCr; j++) _t += '}';
+      _t = _t.replace(/,\s*\]/g, ']').replace(/,\s*\}/g, '}');
+      try { return JSON.parse(_t); } catch(e) {}
+    }
+    throw new Error('Could not parse JSON (response may be truncated). Raw preview: ' + txt.substring(0, 300));
   };
 
   /* --- FETCH RESEARCH --- */
