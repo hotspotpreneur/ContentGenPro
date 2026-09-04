@@ -9,33 +9,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve static files from 'public' folder
+// Serve static files from 'public' folder (no auth needed)
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ============================================================
-// 🔒 SECURITY CHECK FOR IFrame (Added securely here)
-// ============================================================
-app.use((req, res, next) => {
-    // The secret key must match exactly what you put in your WordPress button
-    const SECRET_KEY = 'super_secret_12345'; 
-    
-    // Get the auth key from the URL (e.g. ?auth=...)
-    const authKey = req.query.auth;
-
-    // If the key is missing or wrong, block access!
-    if (authKey !== SECRET_KEY) {
-        return res.status(403).send("Access Denied. Please log in via our website.");
-    }
-
-    // This tells the browser it is allowed to be shown inside your WordPress site (iFrame)
-    res.setHeader('X-Frame-Options', 'ALLOWALL');
-    
-    next(); // Allow the request to continue to your API or HTML
-});
-// ============================================================
-
-// ============================================================
-// API ROUTE - Handle content generation
+// API ROUTE - Handle content generation (no auth needed)
 // ============================================================
 app.post('/api/generate', async (req, res) => {
     try {
@@ -54,7 +32,7 @@ app.post('/api/generate', async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${process.env.OPENROUTER_KEY}`,
-                'HTTP-Referer': 'https://contentgenpro.onrender.com',
+                'HTTP-Referer': 'https://app.contentgenpro.online',
                 'X-Title': 'ContentGenPro'
             },
             body: JSON.stringify({
@@ -83,9 +61,17 @@ app.post('/api/generate', async (req, res) => {
 });
 
 // ============================================================
-// Handle all other routes - serve index.html
+// 🔒 SECURITY CHECK FOR IFrame — only on the catch-all route
 // ============================================================
 app.get('*', (req, res) => {
+    const SECRET_KEY = 'super_secret_12345';
+    const authKey = req.query.auth;
+
+    // Allow iframe embedding header when auth key is present
+    if (authKey === SECRET_KEY) {
+        res.setHeader('X-Frame-Options', 'ALLOWALL');
+    }
+
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

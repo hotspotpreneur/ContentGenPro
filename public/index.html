@@ -732,8 +732,14 @@
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ input: _up, profile: _sp, model: _$k(7) })
         });
-        if (!_resp.ok) { var _err = await _resp.json(); throw new Error(_err.error || 'Generation failed'); }
-        var _data = await _resp.json();
+        var _respText = await _resp.text();
+        if (!_resp.ok) {
+          var _errMsg = 'Generation failed (HTTP ' + _resp.status + ')';
+          try { var _eo = JSON.parse(_respText); _errMsg = _eo.error || _errMsg; } catch(e) { if (_respText) _errMsg = _respText; }
+          throw new Error(_errMsg);
+        }
+        var _data;
+        try { _data = JSON.parse(_respText); } catch(e) { throw new Error('Invalid server response: ' + _respText.substring(0, 300)); }
         var _raw = _data.choices?.[0]?.message?.content;
         if (!_raw) throw new Error('No content received');
         var _parsed = _ej(_raw);
