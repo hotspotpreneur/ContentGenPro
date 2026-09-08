@@ -254,7 +254,7 @@
     var _c = ct || _DC;
     var _kw = kw && kw.length ? kw.join(', ') : 'none specified';
     var _blCtx = bl && bl.length ? '\n\nTARGET BACKLINK URLS:\n' + bl.map((b,i) => `${i+1}. URL: ${b.url} - Topic: ${b.topic||'general'}`).join('\n') : '';
-    return `\u26a0\ufe0f CRITICAL: EACH item must be LONG (500+ words). Generate EXACT counts:\n\nYouTube: ${_c.youtube} scripts (EACH 500-800 words)\nNewsletter: ${_c.newsletter} (EACH 1000-1200 words)\nLinkedIn: ${_c.linkedin} posts (EACH 200-300 words)\nTweets: ${_c.twitter} tweets\nBlog: ${_c.blog} posts (EACH 700-900 words)\nImages: ${_c.images} prompts\nBacklinks: ${_c.backlinks}\nPodcast: 1 script (300 sec / 5 min)\n\nMy persona: ${nm||'Creator'}\nAudience: ${au||'general'}\nTone: ${tn||'professional'}\n\nKeywords: ${_kw}${_blCtx}\n\nReturn JSON ONLY. For each backlink, you MUST include an "ahref" field with a complete executable HTML anchor tag: <a href="URL" target="_blank" rel="noopener noreferrer">ANCHOR_TEXT</a>\n\nArrays must have EXACT counts. Make each item LONG. Write full, detailed content.\n\nJSON:\n{\n  youtube_scripts: [{title, hook, body, cta}],\n  newsletters: [{subject, preview_text, body, references: [{title, url, source}]}],\n  linkedin_posts: [string],\n  twitter_thread: [string],\n  blog_posts: [{title, meta_description, h2_headings: [3], body, key_takeaways: [3]}],\n  tags: [10],\n  image_prompts: [{thumbnail, social, blog_hero}],\n  seo_keywords: {primary: [3], secondary: [5]},\n  content_angles: [3],\n  auto_publish: {suggested_hashtags: [5], caption: string, call_to_action: string},\n  research_links: [{title, url, source, snippet}],\n  backlinks: [{title, url, text, anchor_text, ahref}],\n  podcast_script: {title, duration_minutes: 5, host1, host2, script}\n}`;
+    return `\u26a0\ufe0f CRITICAL: EACH item must be LONG (500+ words). Generate EXACT counts:\n\nYouTube: ${_c.youtube} scripts (EACH 500-800 words)\nNewsletter: ${_c.newsletter} (EACH 1000-1200 words)\nLinkedIn: ${_c.linkedin} posts (EACH 200-300 words)\nTweets: ${_c.twitter} tweets\nBlog: ${_c.blog} posts (EACH 700-900 words)\nImages: ${_c.images} prompts\nBacklinks: ${_c.backlinks}\nPodcast: 1 script (300 sec / 5 min)\n\nMy persona: ${nm||'Creator'}\nAudience: ${au||'general'}\nTone: ${tn||'professional'}\n\nKeywords: ${_kw}${_blCtx}\n\n⚡ AEO/SEO/GEO OPTIMIZATION (Blog Posts & Newsletters):\n\nBLOG POSTS — Optimize for SEO, AEO & GEO:\n• featured_snippet: 40-60 word direct answer paragraph for Google Featured Snippets / AI Overviews. Start with a clear definition or direct answer to the topic question.\n• tldr: 2-3 sentence summary for AI answer engines and quick readers.\n• h2_headings: 5 keyword-rich H2 subheadings using target keywords naturally.\n• body: Full article (700-900 words). Use H2/H3 structure. Include statistics with source attribution inline. Write with E-E-A-T signals (Experience, Expertise, Authoritativeness, Trustworthiness).\n• faq: 3-5 Q&A pairs for People Also Ask and FAQ schema. Each answer 2-3 sentences, concise and direct.\n• citations: 3-5 {claim, source} objects — factual claims paired with credible sources (e.g. \"HubSpot 2024\", \"Statista\", \"Harvard Business Review\").\n• schema_type: Suggested schema.org type (e.g. \"Article\", \"HowTo\", \"FAQPage\", \"BlogPosting\").\n\nNEWSLETTERS — Optimize for AEO & GEO:\n• tldr: 2-3 sentence summary at the top for scanners.\n• body: Full newsletter (1000-1200 words). Use bullet points, numbered lists, bold key phrases. Include cited statistics.\n• faq: 3 Q&A pairs — common audience questions about the topic.\n• citations: 3 {claim, source} — data points with source attribution.\n\nReturn JSON ONLY. For each backlink, you MUST include an "ahref" field with a complete executable HTML anchor tag: <a href="URL" target="_blank" rel="noopener noreferrer">ANCHOR_TEXT</a>\n\nArrays must have EXACT counts. Make each item LONG. Write full, detailed content.\n\nJSON:\n{\n  youtube_scripts: [{title, hook, body, cta}],\n  newsletters: [{subject, preview_text, tldr, body, faq: [{q, a}], citations: [{claim, source}], references: [{title, url, source}]}],\n  linkedin_posts: [string],\n  twitter_thread: [string],\n  blog_posts: [{title, meta_description, featured_snippet, tldr, h2_headings: [5], body, key_takeaways: [3], faq: [{q, a}], citations: [{claim, source}], schema_type}],\n  tags: [10],\n  image_prompts: [{thumbnail, social, blog_hero}],\n  seo_keywords: {primary: [3], secondary: [5]},\n  content_angles: [3],\n  auto_publish: {suggested_hashtags: [5], caption: string, call_to_action: string},\n  research_links: [{title, url, source, snippet}],\n  backlinks: [{title, url, text, anchor_text, ahref}],\n  podcast_script: {title, duration_minutes: 5, host1, host2, script}\n}`;
   };
 
   /* --- TABS --- */
@@ -351,10 +351,10 @@
       _rows.push('');
     };
     _addS('YouTube Scripts', qt.youtube_scripts, ['#','Title','Hook','Body','CTA'], (s,i) => [i+1,s.title||'',s.hook||'',s.body||'',s.cta||'']);
-    _addS('Newsletters', qt.newsletters, ['#','Subject','Preview','Body'], (n,i) => [i+1,n.subject||'',n.preview_text||'',n.body||'']);
+    _addS('Newsletters', qt.newsletters, ['#','Subject','Preview','TL;DR','Body','FAQ','Citations'], (n,i) => [i+1,n.subject||'',n.preview_text||'',n.tldr||'',(n.body||'').substring(0,500),(n.faq||[]).map(f=>'Q: '+f.q+' A: '+f.a).join(' | '),(n.citations||[]).map(c=>c.claim+' — '+c.source).join(' | ')]);
     _addS('LinkedIn Posts', qt.linkedin_posts, ['#','Post'], (p,i) => [i+1,p||'']);
     _addS('Twitter Thread', qt.twitter_thread, ['#','Tweet'], (t,i) => [i+1,t||'']);
-    _addS('Blog Posts', qt.blog_posts, ['#','Title','Meta Description','H2 Headings','Body','Key Takeaways'], (b,i) => [i+1,b.title||'',b.meta_description||'',(b.h2_headings||[]).join('; '),b.body||'',(b.key_takeaways||[]).join('; ')]);
+    _addS('Blog Posts', qt.blog_posts, ['#','Title','Meta Description','Featured Snippet','TL;DR','Schema','H2 Headings','Body','Key Takeaways','FAQ','Citations'], (b,i) => [i+1,b.title||'',b.meta_description||'',b.featured_snippet||'',b.tldr||'',b.schema_type||'',(b.h2_headings||[]).join('; '),(b.body||'').substring(0,500),(b.key_takeaways||[]).join('; '),(b.faq||[]).map(f=>'Q: '+f.q+' A: '+f.a).join(' | '),(b.citations||[]).map(c=>c.claim+' — '+c.source).join(' | ')]);
     _addS('Image Prompts', qt.image_prompts, ['#','Thumbnail','Social','Blog Hero'], (img,i) => [i+1,img.thumbnail||'',img.social||'',img.blog_hero||'']);
     _addS('Backlinks', qt.backlinks, ['#','Title','URL','Anchor Text','AHREF','Body'], (b,i) => [i+1,b.title||'',b.url||'',b.anchor_text||'',b.ahref||`<a href="${b.url}" target="_blank" rel="noopener noreferrer">${b.anchor_text||'click here'}</a>`,b.text||'']);
     _addS('Podcast Script', qt.podcast_script ? [qt.podcast_script] : [], ['Title','Duration (min)','Host 1','Host 2','Script'], (p) => [p.title||'',p.duration_minutes||5,p.host1||'',p.host2||'',p.script||'']);
@@ -579,10 +579,10 @@
   const _bwh = (qt, pn) => {
     var _b = `<h1 style="color:#1a1a1a;font-family:Arial,sans-serif">${pn || 'ContentGenPro Export'}</h1>`;
     (qt.youtube_scripts||[]).forEach((s,i) => { _b += `<h2>YouTube Script ${i+1}: ${s.title||''}</h2><p><strong>Hook:</strong> ${s.hook||''}</p><p>${s.body||''}</p><p><strong>CTA:</strong> ${s.cta||''}</p><hr/>`; });
-    (qt.newsletters||[]).forEach((n,i) => { _b += `<h2>Newsletter ${i+1}: ${n.subject||''}</h2><p>${n.body||''}</p><hr/>`; });
+    (qt.newsletters||[]).forEach((n,i) => { _b += `<h2>Newsletter ${i+1}: ${n.subject||''}</h2>${n.tldr?'<p><em><strong>TL;DR:</strong> '+n.tldr+'</em></p>':''}<p>${n.body||''}</p>${(n.faq||[]).length?'<h3>FAQ</h3>'+n.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(n.citations||[]).length?'<h3>Citations</h3>'+n.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}<hr/>`; });
     (qt.linkedin_posts||[]).forEach((p,i) => { _b += `<h2>LinkedIn Post ${i+1}</h2><p>${p}</p><hr/>`; });
     if (qt.twitter_thread&&qt.twitter_thread.length) { _b += `<h2>Twitter Thread</h2>`; qt.twitter_thread.forEach((t,i) => { _b += `<p><strong>Tweet ${i+1}:</strong> ${t}</p>`; }); _b += `<hr/>`; }
-    (qt.blog_posts||[]).forEach((bp,i) => { _b += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2><p><em>${bp.meta_description||''}</em></p><p>${bp.body||''}</p><hr/>`; });
+    (qt.blog_posts||[]).forEach((bp,i) => { _b += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2><p><em>${bp.meta_description||''}</em></p>${bp.featured_snippet?'<div style="background:#f0f8ff;border-left:4px solid #0066cc;padding:12px;margin:12px 0"><strong>Featured Snippet:</strong> '+bp.featured_snippet+'</div>':''}${bp.tldr?'<p><strong>TL;DR:</strong> <em>'+bp.tldr+'</em></p>':''}${bp.schema_type?'<p><strong>Schema Type:</strong> '+bp.schema_type+'</p>':''}<p>${bp.body||''}</p>${(bp.faq||[]).length?'<h3>FAQ — People Also Ask</h3>'+bp.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(bp.citations||[]).length?'<h3>Citations & Sources</h3>'+bp.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}<hr/>`; });
     (qt.backlinks||[]).forEach((bl,i) => {
       var _ah = bl.ahref || `<a href="${bl.url||'#'}" target="_blank" rel="noopener noreferrer">${bl.anchor_text||'click here'}</a>`;
       _b += `<h2>Backlink ${i+1}: ${bl.title||''}</h2><p><strong>URL:</strong> ${bl.url||''}</p><p><strong>Anchor:</strong> ${bl.anchor_text||''}</p><p><strong>AHREF:</strong> ${_ah}</p><p>${bl.text||''}</p><hr/>`;
@@ -602,7 +602,9 @@
       _txt += `${'─'.repeat(40)}\nYOUTUBE SCRIPT ${i+1}: ${s.title||''}\n${'─'.repeat(40)}\nHOOK: ${s.hook||''}\n\n${s.body||''}\n\nCTA: ${s.cta||''}\n\n`;
     });
     (qt.newsletters||[]).forEach((n,i) => {
-      _txt += `${'─'.repeat(40)}\nNEWSLETTER ${i+1}: ${n.subject||''}\n${'─'.repeat(40)}\n${n.body||''}\n\n`;
+      _txt += `${'─'.repeat(40)}\nNEWSLETTER ${i+1}: ${n.subject||''}\n${'─'.repeat(40)}\n${n.tldr?'TL;DR: '+n.tldr+'\n\n':''}${n.body||''}\n\n`;
+      if (n.faq&&n.faq.length) { _txt += `FAQ:\n`; n.faq.forEach((f,j) => { _txt += `Q${j+1}: ${f.q}\nA: ${f.a}\n\n`; }); }
+      if (n.citations&&n.citations.length) { _txt += `CITATIONS:\n`; n.citations.forEach(c => { _txt += `• "${c.claim}" — ${c.source}\n`; }); _txt += '\n'; }
     });
     (qt.linkedin_posts||[]).forEach((p,i) => {
       _txt += `${'─'.repeat(40)}\nLINKEDIN POST ${i+1}\n${'─'.repeat(40)}\n${p}\n\n`;
@@ -612,7 +614,9 @@
       qt.twitter_thread.forEach((t,i) => { _txt += `[${i+1}] ${t}\n\n`; });
     }
     (qt.blog_posts||[]).forEach((bp,i) => {
-      _txt += `${'─'.repeat(40)}\nBLOG POST ${i+1}: ${bp.title||''}\n${'─'.repeat(40)}\nMETA: ${bp.meta_description||''}\n\n${bp.body||''}\n\nKEY TAKEAWAYS: ${(bp.key_takeaways||[]).join(' | ')}\n\n`;
+      _txt += `${'─'.repeat(40)}\nBLOG POST ${i+1}: ${bp.title||''}\n${'─'.repeat(40)}\nMETA: ${bp.meta_description||''}\n${bp.schema_type?'SCHEMA: '+bp.schema_type+'\n':''}${bp.featured_snippet?'\nFEATURED SNIPPET:\n'+bp.featured_snippet+'\n':''}${bp.tldr?'\nTL;DR: '+bp.tldr+'\n':''}\n${bp.body||''}\n\nKEY TAKEAWAYS: ${(bp.key_takeaways||[]).join(' | ')}\n\n`;
+      if (bp.faq&&bp.faq.length) { _txt += `FAQ — PEOPLE ALSO ASK:\n`; bp.faq.forEach((f,j) => { _txt += `Q${j+1}: ${f.q}\nA: ${f.a}\n\n`; }); }
+      if (bp.citations&&bp.citations.length) { _txt += `CITATIONS:\n`; bp.citations.forEach(c => { _txt += `• "${c.claim}" — ${c.source}\n`; }); _txt += '\n'; }
     });
     if (qt.backlinks && qt.backlinks.length) {
       _txt += `${'─'.repeat(40)}\nBACKLINKS\n${'─'.repeat(40)}\n`;
@@ -818,10 +822,10 @@
           if (kw.length) _content += `## Target Keywords\n${kw.join(', ')}\n\n`;
           if (bl.length) _content += `## Backlink URLs\n${bl.map(b => b.url).join('\n')}\n\n`;
           (qt.youtube_scripts||[]).forEach((s,i) => { _content += `## YouTube Script ${i+1}\n**${s.title||''}**\n\n${s.body||''}\n\n**CTA:** ${s.cta||''}\n\n`; });
-          (qt.newsletters||[]).forEach((n,i) => { _content += `## Newsletter ${i+1}: ${n.subject||''}\n${n.body||''}\n\n`; });
+          (qt.newsletters||[]).forEach((n,i) => { _content += `## Newsletter ${i+1}: ${n.subject||''}\n${n.tldr?'**TL;DR:** *'+n.tldr+'*\n\n':''}${n.body||''}\n\n${(n.faq||[]).length?'### FAQ\n'+n.faq.map(f=>'**Q: '+f.q+'**\nA: '+f.a).join('\n\n')+'\n\n':''}${(n.citations||[]).length?'### Citations\n'+n.citations.map(c=>'- "'+c.claim+'" — *'+c.source+'*').join('\n')+'\n\n':''}`;});
           (qt.linkedin_posts||[]).forEach((lp,i) => { _content += `## LinkedIn Post ${i+1}\n${lp}\n\n`; });
           _content += `## Twitter Thread\n${(qt.twitter_thread||[]).join('\n\n')}\n\n`;
-          (qt.blog_posts||[]).forEach((bp,i) => { _content += `## Blog Post ${i+1}: ${bp.title||''}\n*${bp.meta_description||''}*\n\n${bp.body||''}\n\n`; });
+          (qt.blog_posts||[]).forEach((bp,i) => { _content += `## Blog Post ${i+1}: ${bp.title||''}\n*${bp.meta_description||''}*\n${bp.schema_type?'\n**Schema:** `'+bp.schema_type+'`\n':''}${bp.featured_snippet?'\n### 🎯 Featured Snippet\n> '+bp.featured_snippet+'\n':''}${bp.tldr?'\n**TL;DR:** *'+bp.tldr+'*\n':''}\n${bp.body||''}\n\n${(bp.faq||[]).length?'### ❓ FAQ — People Also Ask\n'+bp.faq.map(f=>'**Q: '+f.q+'**\nA: '+f.a).join('\n\n')+'\n\n':''}${(bp.citations||[]).length?'### 📊 Citations & Sources\n'+bp.citations.map(c=>'- "'+c.claim+'" — *'+c.source+'*').join('\n')+'\n\n':''}`;});
           (qt.image_prompts||[]).forEach((img,i) => { _content += `## Image Prompts ${i+1}\n- Thumbnail: ${img.thumbnail||''}\n- Social: ${img.social||''}\n- Blog Hero: ${img.blog_hero||''}\n\n`; });
           (qt.backlinks||[]).forEach((bk,i) => {
             var _ah = bk.ahref || `<a href="${bk.url||'#'}" target="_blank" rel="noopener noreferrer">${bk.anchor_text||'click here'}</a>`;
@@ -835,11 +839,11 @@
           _content += `<h1>${pn||'Content'}</h1>`;
           if (kw.length) _content += `<h2>Target Keywords</h2><p>${kw.join(', ')}</p>`;
           (qt.youtube_scripts||[]).forEach((s,i) => { _content += `<h2>YouTube Script ${i+1}</h2><h3>${s.title||''}</h3><p>${s.body||''}</p><p><strong>CTA:</strong> ${s.cta||''}</p>`; });
-          (qt.newsletters||[]).forEach((n,i) => { _content += `<h2>Newsletter ${i+1}: ${n.subject||''}</h2><p>${n.body||''}</p>`; });
+          (qt.newsletters||[]).forEach((n,i) => { _content += `<h2>Newsletter ${i+1}: ${n.subject||''}</h2>${n.tldr?'<p><em><strong>TL;DR:</strong> '+n.tldr+'</em></p>':''}<p>${n.body||''}</p>${(n.faq||[]).length?'<h3>FAQ</h3>'+n.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(n.citations||[]).length?'<h3>Citations</h3>'+n.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}`; });
           (qt.linkedin_posts||[]).forEach((lp,i) => { _content += `<h2>LinkedIn Post ${i+1}</h2><p>${lp}</p>`; });
           _content += `<h2>Twitter Thread</h2>`;
           (qt.twitter_thread||[]).forEach((tw,i) => { _content += `<p><strong>${i+1}.</strong> ${tw}</p>`; });
-          (qt.blog_posts||[]).forEach((bp,i) => { _content += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2><em><p>${bp.meta_description||''}</p></em><p>${bp.body||''}</p>`; });
+          (qt.blog_posts||[]).forEach((bp,i) => { _content += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2><em><p>${bp.meta_description||''}</p></em>${bp.schema_type?'<p><strong>Schema:</strong> <code>'+bp.schema_type+'</code></p>':''}${bp.featured_snippet?'<div style="background:#f0f8ff;border-left:4px solid #0066cc;padding:12px;margin:12px 0"><strong>Featured Snippet:</strong> '+bp.featured_snippet+'</div>':''}${bp.tldr?'<p><strong>TL;DR:</strong> <em>'+bp.tldr+'</em></p>':''}<p>${bp.body||''}</p>${(bp.faq||[]).length?'<h3>FAQ — People Also Ask</h3>'+bp.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(bp.citations||[]).length?'<h3>Citations & Sources</h3>'+bp.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}`; });
           (qt.backlinks||[]).forEach((bk,i) => {
             var _ah = bk.ahref || `<a href="${bk.url||'#'}" target="_blank" rel="noopener noreferrer">${bk.anchor_text||'click here'}</a>`;
             _content += `<h2>Backlink ${i+1}: ${bk.title||''}</h2><p><strong>URL:</strong> ${bk.url||''}</p><p><strong>AHREF (executable):</strong></p><div class="ahref-code">${_ah.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><p>${bk.text||''}</p>`;
@@ -880,7 +884,63 @@
       }
       switch(at) {
         case 'youtube': return <div>{(qt.youtube_scripts||[]).map((s,i) => <Kj key={i} label="YouTube Script" text={s.body} wordCount index={i} keywords={kw} />)}</div>;
-        case 'newsletter': return <div>{(qt.newsletters||[]).map((n,i) => <div key={i}><Kj label="Newsletter" text={n.body} wordCount index={i} keywords={kw} />{n.references && <Rq links={n.references} />}</div>)}</div>;
+        case 'newsletter': return (
+          <div>
+            {(qt.newsletters||[]).map((n,i) => (
+              <div key={i} style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid #1a1a1a' }}>
+                <Kj label="Subject Line" text={n.subject} index={i} keywords={kw} />
+
+                {/* TL;DR — GEO */}
+                {n.tldr && (
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ color: '#ff6b35', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📋 TL;DR <span style={{ background: '#1a1a0d', color: '#ff6b35', padding: '1px 8px', borderRadius: '10px', fontSize: '8px', border: '1px solid #ff6b3544' }}>GEO</span>
+                    </div>
+                    <div style={{ background: '#1a1508', border: '1px solid #ff6b3533', borderLeft: '3px solid #ff6b35', padding: '10px 14px', borderRadius: '2px', color: '#ddd', fontSize: '12px', fontFamily: "'Lora', Georgia, serif", lineHeight: '1.6', fontStyle: 'italic' }}>
+                      {n.tldr}
+                    </div>
+                    <div style={{ marginTop: '4px', display: 'flex', gap: '6px' }}><Qb text={n.tldr} label="COPY TL;DR" /></div>
+                  </div>
+                )}
+
+                <Kj label="Newsletter Body" text={n.body} wordCount index={i} keywords={kw} />
+
+                {/* FAQ — AEO */}
+                {n.faq && n.faq.length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{ color: '#00d4ff', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      ❓ FAQ <span style={{ background: '#0d1a2a', color: '#00d4ff', padding: '1px 8px', borderRadius: '10px', fontSize: '8px', border: '1px solid #00d4ff44' }}>AEO</span>
+                      <Qb text={n.faq.map(f => `Q: ${f.q}\nA: ${f.a}`).join('\n\n')} label="COPY ALL FAQ" />
+                    </div>
+                    {n.faq.map((f, j) => (
+                      <div key={j} style={{ background: '#111', border: '1px solid #222', borderRadius: '4px', padding: '12px 14px', marginBottom: '6px' }}>
+                        <div style={{ color: '#00d4ff', fontSize: '12px', fontFamily: "'DM Mono', monospace", fontWeight: '500', marginBottom: '6px' }}>Q: {f.q}</div>
+                        <div style={{ color: '#ccc', fontSize: '13px', fontFamily: "'Lora', Georgia, serif", lineHeight: '1.6', paddingLeft: '8px', borderLeft: '2px solid #00d4ff33' }}>A: {f.a}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* CITATIONS — GEO */}
+                {n.citations && n.citations.length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{ color: '#ff6b35', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📊 CITATIONS & SOURCES <span style={{ background: '#1a1a0d', color: '#ff6b35', padding: '1px 8px', borderRadius: '10px', fontSize: '8px', border: '1px solid #ff6b3544' }}>GEO</span>
+                    </div>
+                    {n.citations.map((c, j) => (
+                      <div key={j} style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '8px 12px', marginBottom: '4px', borderRadius: '2px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ color: '#ccc', fontSize: '12px', fontFamily: "'Lora', Georgia, serif", flex: 1 }}>"{c.claim}"</span>
+                        <span style={{ color: '#ff6b35', fontSize: '10px', fontFamily: "'DM Mono', monospace", whiteSpace: 'nowrap' }}>— {c.source}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {n.references && <Rq links={n.references} />}
+              </div>
+            ))}
+          </div>
+        );
         case 'linkedin': return <div>{(qt.linkedin_posts||[]).map((lp,i) => <Kj key={i} label="LinkedIn Post" text={lp} wordCount index={i} keywords={kw} />)}</div>;
         case 'twitter': return (
           <div>
@@ -891,11 +951,46 @@
         case 'blog': return (
           <div>
             {(qt.blog_posts||[]).map((bp,i) => (
-              <div key={i}>
+              <div key={i} style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid #1a1a1a' }}>
                 <Kj label="Blog Title" text={bp.title} index={i} keywords={kw} />
                 <Kj label="Meta Description" text={bp.meta_description} index={i} keywords={kw} />
+
+                {/* FEATURED SNIPPET — AEO */}
+                {bp.featured_snippet && (
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ color: '#00d4ff', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      🎯 FEATURED SNIPPET <span style={{ background: '#0d1a2a', color: '#00d4ff', padding: '1px 8px', borderRadius: '10px', fontSize: '8px', border: '1px solid #00d4ff44' }}>AEO</span>
+                    </div>
+                    <div style={{ background: '#0a1a2a', border: '1px solid #00d4ff33', borderLeft: '3px solid #00d4ff', padding: '12px 14px', borderRadius: '2px', color: '#ddd', fontSize: '13px', fontFamily: "'Lora', Georgia, serif", lineHeight: '1.7' }}>
+                      {bp.featured_snippet}
+                    </div>
+                    <div style={{ marginTop: '4px', display: 'flex', gap: '6px' }}><Qb text={bp.featured_snippet} label="COPY SNIPPET" /></div>
+                  </div>
+                )}
+
+                {/* TL;DR — GEO */}
+                {bp.tldr && (
+                  <div style={{ marginBottom: '14px' }}>
+                    <div style={{ color: '#ff6b35', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📋 TL;DR <span style={{ background: '#1a1a0d', color: '#ff6b35', padding: '1px 8px', borderRadius: '10px', fontSize: '8px', border: '1px solid #ff6b3544' }}>GEO</span>
+                    </div>
+                    <div style={{ background: '#1a1508', border: '1px solid #ff6b3533', borderLeft: '3px solid #ff6b35', padding: '10px 14px', borderRadius: '2px', color: '#ddd', fontSize: '12px', fontFamily: "'Lora', Georgia, serif", lineHeight: '1.6', fontStyle: 'italic' }}>
+                      {bp.tldr}
+                    </div>
+                    <div style={{ marginTop: '4px', display: 'flex', gap: '6px' }}><Qb text={bp.tldr} label="COPY TL;DR" /></div>
+                  </div>
+                )}
+
+                {/* SCHEMA TYPE — SEO */}
+                {bp.schema_type && (
+                  <div style={{ marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#00ff88', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.1em' }}>🏷️ SCHEMA:</span>
+                    <span style={{ background: '#1a2a1a', color: '#00ff88', padding: '3px 12px', borderRadius: '12px', fontSize: '10px', border: '1px solid #00ff8844', fontFamily: "'DM Mono', monospace" }}>{bp.schema_type}</span>
+                  </div>
+                )}
+
                 <div style={{ marginBottom: '12px' }}>
-                  <span style={{ color: '#00ff88', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em' }}>H2 HEADINGS</span>
+                  <span style={{ color: '#00ff88', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em' }}>H2 HEADINGS <span style={{ color: '#888', fontSize: '8px' }}>({(bp.h2_headings||[]).length})</span></span>
                   <Ng tags={bp.h2_headings||[]} color="#1a2a1a" />
                 </div>
                 <Kj label="Blog Body" text={bp.body} wordCount index={i} keywords={kw} />
@@ -903,6 +998,38 @@
                   <span style={{ color: '#00ff88', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em' }}>KEY TAKEAWAYS</span>
                   {(bp.key_takeaways||[]).map((tk,j) => <div key={j} style={{ background: '#111', border: '1px solid #222', borderLeft: '3px solid #ff6b35', padding: '10px 14px', marginTop: '6px', color: '#ccc', fontSize: '13px', fontFamily: "'Lora', Georgia, serif" }}>✓ {tk}</div>)}
                 </div>
+
+                {/* FAQ — AEO (People Also Ask / FAQ Schema) */}
+                {bp.faq && bp.faq.length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{ color: '#00d4ff', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      ❓ FAQ — PEOPLE ALSO ASK <span style={{ background: '#0d1a2a', color: '#00d4ff', padding: '1px 8px', borderRadius: '10px', fontSize: '8px', border: '1px solid #00d4ff44' }}>AEO</span>
+                      <Qb text={bp.faq.map(f => `Q: ${f.q}\nA: ${f.a}`).join('\n\n')} label="COPY ALL FAQ" />
+                    </div>
+                    {bp.faq.map((f, j) => (
+                      <div key={j} style={{ background: '#111', border: '1px solid #222', borderRadius: '4px', padding: '12px 14px', marginBottom: '6px' }}>
+                        <div style={{ color: '#00d4ff', fontSize: '12px', fontFamily: "'DM Mono', monospace", fontWeight: '500', marginBottom: '6px' }}>Q: {f.q}</div>
+                        <div style={{ color: '#ccc', fontSize: '13px', fontFamily: "'Lora', Georgia, serif", lineHeight: '1.6', paddingLeft: '8px', borderLeft: '2px solid #00d4ff33' }}>A: {f.a}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* CITATIONS — GEO (Source Attribution) */}
+                {bp.citations && bp.citations.length > 0 && (
+                  <div style={{ marginTop: '16px' }}>
+                    <div style={{ color: '#ff6b35', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      📊 CITATIONS & SOURCES <span style={{ background: '#1a1a0d', color: '#ff6b35', padding: '1px 8px', borderRadius: '10px', fontSize: '8px', border: '1px solid #ff6b3544' }}>GEO</span>
+                    </div>
+                    {bp.citations.map((c, j) => (
+                      <div key={j} style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', padding: '8px 12px', marginBottom: '4px', borderRadius: '2px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ color: '#ccc', fontSize: '12px', fontFamily: "'Lora', Georgia, serif", flex: 1 }}>"{c.claim}"</span>
+                        <span style={{ color: '#ff6b35', fontSize: '10px', fontFamily: "'DM Mono', monospace", whiteSpace: 'nowrap' }}>— {c.source}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {bp.references && <Rq links={bp.references} />}
               </div>
             ))}
