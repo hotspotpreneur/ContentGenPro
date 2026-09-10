@@ -4,7 +4,13 @@ const path = require('path');
 require('dotenv').config();
 
 const app = express();
-
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "frame-ancestors 'self' https://contentgenpro.online https://*.contentgenpro.online;"
+  );
+  next();
+});
 // Middleware
 app.use(cors());
 app.use(express.json());
