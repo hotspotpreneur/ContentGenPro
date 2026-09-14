@@ -92,6 +92,7 @@ app.post('/api/generate', async (req, res) => {
             body: JSON.stringify({
                 model: 'google/gemini-3.5-flash-lite',
                 max_tokens: 32768,
+                response_format: { type: 'json_object' },
                 messages: [
                     { role: 'system', content: profile },
                     { role: 'user', content: input }

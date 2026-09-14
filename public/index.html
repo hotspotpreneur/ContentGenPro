@@ -357,40 +357,58 @@ JSON:
         return JSON.parse(_cl);
       } catch(e) {}
     }
-    // --- Truncated JSON repair ---
+    // --- Robust JSON extraction & repair ---
     var _si = txt.indexOf('{');
     if (_si === -1) throw new Error('No JSON found in response. Raw preview: ' + txt.substring(0, 300));
     var _s = txt.substring(_si);
-    // Check if we ended inside an unclosed string
+
+    // Track unescaped strings and bracket nesting stack
+    var _stack = [];
     var _inStr = false, _esc = false;
     for (var i = 0; i < _s.length; i++) {
+      var _ch = _s[i];
       if (_esc) { _esc = false; continue; }
-      if (_s[i] === '\\' && _inStr) { _esc = true; continue; }
-      if (_s[i] === '"') _inStr = !_inStr;
+      if (_ch === '\\' && _inStr) { _esc = true; continue; }
+      if (_ch === '"') { _inStr = !_inStr; continue; }
+      if (!_inStr) {
+        if (_ch === '{' || _ch === '[') _stack.push(_ch);
+        else if (_ch === '}' && _stack.length && _stack[_stack.length - 1] === '{') _stack.pop();
+        else if (_ch === ']' && _stack.length && _stack[_stack.length - 1] === '[') _stack.pop();
+      }
     }
     if (_inStr) _s += '"';
-    // Remove trailing comma
     _s = _s.replace(/,\s*$/, '');
-    // Close all unclosed [ and {
-    var _openSq = (_s.match(/\[/g) || []).length - (_s.match(/\]/g) || []).length;
-    var _openCr = (_s.match(/\{/g) || []).length - (_s.match(/\}/g) || []).length;
-    for (var j = 0; j < _openSq; j++) _s += ']';
-    for (var j = 0; j < _openCr; j++) _s += '}';
-    // Clean commas before closers
-    _s = _s.replace(/,\s*\]/g, ']').replace(/,\s*\}/g, '}');
-    try { return JSON.parse(_s); } catch(e) {}
-    // Last resort: truncate back to last complete key-value pair ending with ",
+    var _repair = _s;
+    for (var k = _stack.length - 1; k >= 0; k--) {
+      _repair += (_stack[k] === '{' ? '}' : ']');
+    }
+    _repair = _repair.replace(/,\s*([\}\]])/g, '$1');
+    try { return JSON.parse(_repair); } catch(e) {}
+
+    // Fallback: truncate back to last complete quote-comma pair and close stack
     var _lc = _s.lastIndexOf('",');
     if (_lc > _s.length * 0.3) {
       var _t = _s.substring(0, _lc + 1).replace(/,\s*$/, '');
-      var _oSq = (_t.match(/\[/g) || []).length - (_t.match(/\]/g) || []).length;
-      var _oCr = (_t.match(/\{/g) || []).length - (_t.match(/\}/g) || []).length;
-      for (var j = 0; j < _oSq; j++) _t += ']';
-      for (var j = 0; j < _oCr; j++) _t += '}';
-      _t = _t.replace(/,\s*\]/g, ']').replace(/,\s*\}/g, '}');
+      var _tStack = [];
+      var _tInStr = false, _tEsc = false;
+      for (var m = 0; m < _t.length; m++) {
+        var _c2 = _t[m];
+        if (_tEsc) { _tEsc = false; continue; }
+        if (_c2 === '\\' && _tInStr) { _tEsc = true; continue; }
+        if (_c2 === '"') { _tInStr = !_tInStr; continue; }
+        if (!_tInStr) {
+          if (_c2 === '{' || _c2 === '[') _tStack.push(_c2);
+          else if (_c2 === '}' && _tStack.length && _tStack[_tStack.length - 1] === '{') _tStack.pop();
+          else if (_c2 === ']' && _tStack.length && _tStack[_tStack.length - 1] === '[') _tStack.pop();
+        }
+      }
+      for (var n = _tStack.length - 1; n >= 0; n--) {
+        _t += (_tStack[n] === '{' ? '}' : ']');
+      }
+      _t = _t.replace(/,\s*([\}\]])/g, '$1');
       try { return JSON.parse(_t); } catch(e) {}
     }
-    throw new Error('Could not parse JSON (response may be truncated). Raw preview: ' + txt.substring(0, 300));
+    throw new Error('Could not parse JSON (response may be malformed). Raw preview: ' + txt.substring(0, 300));
   };
 
   /* --- FETCH RESEARCH --- */
