@@ -267,7 +267,7 @@ EXACT COUNTS REQUIRED:
 • LinkedIn: ${_c.linkedin} long-form posts (EACH 200-350 words)
 • Tweets: ${_c.twitter} standalone tweets
 • Blog: ${_c.blog} complete blog posts (EACH 700-900 words)
-• Images: ${_c.images} prompt sets
+• Images: ${_c.images} AI image prompts (EACH a distinct standalone prompt)
 • Backlinks: ${_c.backlinks} backlink placements
 • Podcast: 1 script (300 sec / 5 min)
 
@@ -304,7 +304,7 @@ Keywords: ${_kw}${_blCtx}
 
 ⚡ BACKLINKS & IMAGE PROMPTS:
 • backlinks: MUST contain EXACTLY ${_c.backlinks} objects. For each backlink, you MUST include an "ahref" field with a complete executable HTML anchor tag: <a href="URL" target="_blank" rel="noopener noreferrer">ANCHOR_TEXT</a>
-• image_prompts: MUST contain EXACTLY ${_c.images} objects ({thumbnail, social, blog_hero}).
+• image_prompts: MUST contain EXACTLY ${_c.images} individual image prompt objects ({title, prompt, aspect_ratio, style}). ONE distinct creative image prompt per item for a total of EXACTLY ${_c.images} prompts (do NOT create 3 sub-prompts per item).
 
 Return JSON ONLY without Markdown code fences. Arrays must have EXACT counts. Make each item LONG. Write full, detailed content.
 
@@ -316,7 +316,7 @@ JSON:
   twitter_thread: [string],
   blog_posts: [{title, meta_description, featured_snippet, tldr, h2_headings: [5], body, key_takeaways: [3], faq: [{q, a}], citations: [{claim, source}], schema_type}],
   tags: [10],
-  image_prompts: [{thumbnail, social, blog_hero}],
+  image_prompts: [{title, prompt, aspect_ratio, style}],
   seo_keywords: {primary: [3], secondary: [5]},
   content_angles: [3],
   auto_publish: {suggested_hashtags: [5], caption: string, call_to_action: string},
@@ -442,7 +442,11 @@ JSON:
     _addS('LinkedIn Posts', qt.linkedin_posts, ['#','Post'], (p,i) => [i+1,p||'']);
     _addS('Twitter Thread', qt.twitter_thread, ['#','Tweet'], (t,i) => [i+1,t||'']);
     _addS('Blog Posts', qt.blog_posts, ['#','Title','Meta Description','Featured Snippet','TL;DR','Schema','H2 Headings','Body','Key Takeaways','FAQ','Citations'], (b,i) => [i+1,b.title||'',b.meta_description||'',b.featured_snippet||'',b.tldr||'',b.schema_type||'',(b.h2_headings||[]).join('; '),(b.body||'').substring(0,500),(b.key_takeaways||[]).join('; '),(b.faq||[]).map(f=>'Q: '+f.q+' A: '+f.a).join(' | '),(b.citations||[]).map(c=>c.claim+' — '+c.source).join(' | ')]);
-    _addS('Image Prompts', qt.image_prompts, ['#','Thumbnail','Social','Blog Hero'], (img,i) => [i+1,img.thumbnail||'',img.social||'',img.blog_hero||'']);
+    _addS('Image Prompts', qt.image_prompts, ['#','Title','Prompt','Aspect Ratio','Style'], (img,i) => {
+      if (typeof img === 'string') return [i+1, 'Image '+(i+1), img, '', ''];
+      var _pr = img.prompt || [img.thumbnail, img.social, img.blog_hero].filter(Boolean).join(' | ');
+      return [i+1, img.title || ('Image '+(i+1)), _pr, img.aspect_ratio||'', img.style||''];
+    });
     _addS('Backlinks', qt.backlinks, ['#','Title','URL','Anchor Text','AHREF','Body'], (b,i) => [i+1,b.title||'',b.url||'',b.anchor_text||'',b.ahref||`<a href="${b.url}" target="_blank" rel="noopener noreferrer">${b.anchor_text||'click here'}</a>`,b.text||'']);
     _addS('Podcast Script', qt.podcast_script ? [qt.podcast_script] : [], ['Title','Duration (min)','Host 1','Host 2','Script'], (p) => [p.title||'',p.duration_minutes||5,p.host1||'',p.host2||'',p.script||'']);
     _addS('Tags', qt.tags, ['#','Tag'], (tag,i) => [i+1,tag||'']);
@@ -497,16 +501,42 @@ JSON:
   /* --- COPY BUTTON --- */
   function Qb({ text, label }) {
     const [_cp, _scp] = useState(false);
-    const _doCopy = () => {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => { _scp(true); setTimeout(() => _scp(false), 2000); });
-      } else {
+    const _execFallback = (str) => {
+      try {
         var _ta = document.createElement('textarea');
-        _ta.value = text; _ta.style.position = 'fixed'; _ta.style.opacity = '0';
-        document.body.appendChild(_ta); _ta.select(); document.execCommand('copy');
-        document.body.removeChild(_ta); _scp(true); setTimeout(() => _scp(false), 2000);
+        _ta.value = str;
+        _ta.setAttribute('readonly', '');
+        _ta.style.position = 'fixed';
+        _ta.style.left = '-9999px';
+        _ta.style.top = '0';
+        _ta.style.opacity = '0';
+        document.body.appendChild(_ta);
+        _ta.focus();
+        _ta.select();
+        _ta.setSelectionRange(0, str.length);
+        var _ok = document.execCommand('copy');
+        document.body.removeChild(_ta);
+        return _ok;
+      } catch(e) {
+        return false;
       }
     };
+
+    const _doCopy = (e) => {
+      if (e && e.stopPropagation) e.stopPropagation();
+      if (!text) return;
+      var _done = () => { _scp(true); setTimeout(() => _scp(false), 2000); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+          .then(_done)
+          .catch(() => {
+            if (_execFallback(text)) _done();
+          });
+      } else {
+        if (_execFallback(text)) _done();
+      }
+    };
+
     return (
       <button onClick={_doCopy} style={{
         background: _cp ? '#00ff88' : 'transparent',
@@ -851,9 +881,9 @@ JSON:
       try {
         var _rc = '';
         if (rl.length) _rc = '\n\nRECENT RESEARCH/NEWS:\n' + rl.map((r,i) => `${i+1}. ${r.title} - ${r.source} (${r.url})`).join('\n');
-        spg(`Generating: ${ct.youtube} YouTube, ${ct.newsletter} Newsletter, ${ct.linkedin} LinkedIn, ${ct.twitter} Tweets, ${ct.blog} Blogs, ${ct.backlinks} Backlinks...`);
+        spg(`Generating: ${ct.youtube} YouTube, ${ct.newsletter} Newsletter, ${ct.linkedin} LinkedIn, ${ct.twitter} Tweets, ${ct.blog} Blogs, ${ct.images} Images, ${ct.backlinks} Backlinks...`);
         var _sp = _pp(nm, au, tn, ct, kw, bl);
-        var _up = `Raw idea / voice note:\n\n${qi}${_rc}\n\nCRITICAL: Return ONLY the complete JSON object with EXACT array counts (specifically: exactly ${ct.blog} complete blog posts in "blog_posts", exactly ${ct.backlinks} in "backlinks", exactly ${ct.images} in "image_prompts", exactly ${ct.linkedin} long-form posts in "linkedin_posts", etc.). Do NOT truncate, stop early, or summarize. Each backlink MUST include an "ahref" field with a complete <a href="..."> tag.`;
+        var _up = `Raw idea / voice note:\n\n${qi}${_rc}\n\nCRITICAL: Return ONLY the complete JSON object with EXACT array counts (specifically: exactly ${ct.blog} complete blog posts in "blog_posts", exactly ${ct.backlinks} in "backlinks", exactly ${ct.images} individual prompts in "image_prompts", exactly ${ct.linkedin} long-form posts in "linkedin_posts", etc.). Do NOT truncate, stop early, or summarize. Each backlink MUST include an "ahref" field with a complete <a href="..."> tag.`;
         var _resp = await fetch(_$k(6), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ input: _up, profile: _sp, model: _$k(7), token: _tok })
@@ -928,7 +958,15 @@ JSON:
           (qt.linkedin_posts||[]).forEach((lp,i) => { _content += `## LinkedIn Post ${i+1}\n${lp}\n\n`; });
           _content += `## Twitter Thread\n${(qt.twitter_thread||[]).join('\n\n')}\n\n`;
           (qt.blog_posts||[]).forEach((bp,i) => { _content += `## Blog Post ${i+1}: ${bp.title||''}\n*${bp.meta_description||''}*\n${bp.schema_type?'\n**Schema:** `'+bp.schema_type+'`\n':''}${bp.featured_snippet?'\n### 🎯 Featured Snippet\n> '+bp.featured_snippet+'\n':''}${bp.tldr?'\n**TL;DR:** *'+bp.tldr+'*\n':''}\n${bp.body||''}\n\n${(bp.faq||[]).length?'### ❓ FAQ — People Also Ask\n'+bp.faq.map(f=>'**Q: '+f.q+'**\nA: '+f.a).join('\n\n')+'\n\n':''}${(bp.citations||[]).length?'### 📊 Citations & Sources\n'+bp.citations.map(c=>'- "'+c.claim+'" — *'+c.source+'*').join('\n')+'\n\n':''}`;});
-          (qt.image_prompts||[]).forEach((img,i) => { _content += `## Image Prompts ${i+1}\n- Thumbnail: ${img.thumbnail||''}\n- Social: ${img.social||''}\n- Blog Hero: ${img.blog_hero||''}\n\n`; });
+          (qt.image_prompts||[]).forEach((img,i) => {
+            if (typeof img === 'string') {
+              _content += `## Image Prompt ${i+1}\n${img}\n\n`;
+            } else if (img.prompt) {
+              _content += `## ${img.title || ('Image Prompt ' + (i+1))}\n**Prompt:** ${img.prompt}\n${img.aspect_ratio ? '**Aspect Ratio:** ' + img.aspect_ratio + '\n' : ''}${img.style ? '**Style:** ' + img.style + '\n' : ''}\n`;
+            } else {
+              _content += `## Image Prompts ${i+1}\n- Thumbnail: ${img.thumbnail||''}\n- Social: ${img.social||''}\n- Blog Hero: ${img.blog_hero||''}\n\n`;
+            }
+          });
           (qt.backlinks||[]).forEach((bk,i) => {
             var _ah = bk.ahref || `<a href="${bk.url||'#'}" target="_blank" rel="noopener noreferrer">${bk.anchor_text||'click here'}</a>`;
             _content += `## Backlink ${i+1}: ${bk.title||''}\n**URL:** ${bk.url||''}\n**Anchor:** ${bk.anchor_text||''}\n**AHREF:** \`${_ah}\`\n\n${bk.text||''}\n\n`;
@@ -946,6 +984,11 @@ JSON:
           _content += `<h2>Twitter Thread</h2>`;
           (qt.twitter_thread||[]).forEach((tw,i) => { _content += `<p><strong>${i+1}.</strong> ${tw}</p>`; });
           (qt.blog_posts||[]).forEach((bp,i) => { _content += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2><em><p>${bp.meta_description||''}</p></em>${bp.schema_type?'<p><strong>Schema:</strong> <code>'+bp.schema_type+'</code></p>':''}${bp.featured_snippet?'<div style="background:#f0f8ff;border-left:4px solid #0066cc;padding:12px;margin:12px 0"><strong>Featured Snippet:</strong> '+bp.featured_snippet+'</div>':''}${bp.tldr?'<p><strong>TL;DR:</strong> <em>'+bp.tldr+'</em></p>':''}<p>${bp.body||''}</p>${(bp.faq||[]).length?'<h3>FAQ — People Also Ask</h3>'+bp.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(bp.citations||[]).length?'<h3>Citations & Sources</h3>'+bp.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}`; });
+          (qt.image_prompts||[]).forEach((img,i) => {
+            var _t = (typeof img === 'object' && img.title) ? img.title : ('Image Prompt ' + (i+1));
+            var _pr = typeof img === 'string' ? img : (img.prompt || [img.thumbnail, img.social, img.blog_hero].filter(Boolean).join(' | '));
+            _content += `<h2>${_t}</h2><p><strong>Prompt:</strong> ${_pr}</p>${img.aspect_ratio?'<p><strong>Ratio:</strong> '+img.aspect_ratio+'</p>':''}${img.style?'<p><strong>Style:</strong> '+img.style+'</p>':''}`;
+          });
           (qt.backlinks||[]).forEach((bk,i) => {
             var _ah = bk.ahref || `<a href="${bk.url||'#'}" target="_blank" rel="noopener noreferrer">${bk.anchor_text||'click here'}</a>`;
             _content += `<h2>Backlink ${i+1}: ${bk.title||''}</h2><p><strong>URL:</strong> ${bk.url||''}</p><p><strong>AHREF (executable):</strong></p><div class="ahref-code">${_ah.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><p>${bk.text||''}</p>`;
@@ -1139,14 +1182,27 @@ JSON:
         );
         case 'images': return (
           <div>
-            <div style={{ color: '#ff6b35', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '10px' }}>🎨 AI IMAGE PROMPTS</div>
-            {(qt.image_prompts||[]).map((img,i) => (
-              <div key={i}>
-                <Kj label="Thumbnail Prompt" text={img.thumbnail} index={i} keywords={kw} />
-                <Kj label="Social Image Prompt" text={img.social} index={i} keywords={kw} />
-                <Kj label="Blog Hero Prompt" text={img.blog_hero} index={i} keywords={kw} />
-              </div>
-            ))}
+            <div style={{ color: '#ff6b35', fontSize: '9px', fontFamily: "'DM Mono', monospace", letterSpacing: '0.15em', marginBottom: '10px' }}>🎨 AI IMAGE PROMPTS ({(qt.image_prompts||[]).length})</div>
+            {(qt.image_prompts||[]).map((img,i) => {
+              if (typeof img === 'string') {
+                return <Kj key={i} label={'Image Prompt #' + (i+1)} text={img} index={i} keywords={kw} />;
+              }
+              if (img.prompt) {
+                var _p = img.prompt;
+                var _meta = [];
+                if (img.aspect_ratio) _meta.push('Ratio: ' + img.aspect_ratio);
+                if (img.style) _meta.push('Style: ' + img.style);
+                if (_meta.length) _p += '\n\nParameters: ' + _meta.join(' | ');
+                return <Kj key={i} label={img.title || ('Image Prompt #' + (i+1))} text={_p} index={i} keywords={kw} />;
+              }
+              return (
+                <div key={i}>
+                  {img.thumbnail && <Kj label="Thumbnail Prompt" text={img.thumbnail} index={i} keywords={kw} />}
+                  {img.social && <Kj label="Social Image Prompt" text={img.social} index={i} keywords={kw} />}
+                  {img.blog_hero && <Kj label="Blog Hero Prompt" text={img.blog_hero} index={i} keywords={kw} />}
+                </div>
+              );
+            })}
           </div>
         );
         case 'backlinks': return <Xd backlinks={qt.backlinks || bl} />;
