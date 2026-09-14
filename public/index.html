@@ -683,6 +683,7 @@
     useEffect(() => {
       try {
         var _sv = localStorage.getItem(_$k(2));
+        if (_sv) {
           var _sd = JSON.parse(_sv);
           spn(_sd.name || '');
           sqi(_sd.input || '');
