@@ -215,7 +215,7 @@
       '\x70\x72\x6f\x66\x69\x6c\x65\x5f\x61\x75\x64\x69\x65\x6e\x63\x65',
       '\x70\x72\x6f\x66\x69\x6c\x65\x5f\x74\x6f\x6e\x65',
       '\x2f\x61\x70\x69\x2f\x67\x65\x6e\x65\x72\x61\x74\x65',
-      '\x6f\x70\x65\x6e\x61\x69\x2f\x67\x70\x74\x2d\x34\x6f\x2d\x6d\x69\x6e\x69',
+      '\x67\x6f\x6f\x67\x6c\x65\x2f\x67\x65\x6d\x69\x6e\x69\x2d\x33\x2e\x35\x2d\x66\x6c\x61\x73\x68\x2d\x6c\x69\x74\x65',
       '\x43\x6f\x6e\x74\x65\x6e\x74\x47\x65\x6e\x50\x72\x6f\x20\x45\x78\x70\x6f\x72\x74',
       '\x63\x6f\x6e\x74\x65\x6e\x74\x67\x65\x6e\x70\x72\x6f\x2e\x6f\x6e\x6c\x69\x6e\x65',
       '\x61\x70\x70\x6c\x69\x63\x61\x74\x69\x6f\x6e\x2f\x6d\x73\x77\x6f\x72\x64',
@@ -259,7 +259,71 @@
     var _c = ct || _DC;
     var _kw = kw && kw.length ? kw.join(', ') : 'none specified';
     var _blCtx = bl && bl.length ? '\n\nTARGET BACKLINK URLS:\n' + bl.map((b,i) => `${i+1}. URL: ${b.url} - Topic: ${b.topic||'general'}`).join('\n') : '';
-    return `\u26a0\ufe0f CRITICAL: EACH item must be LONG (500+ words). Generate EXACT counts:\n\nYouTube: ${_c.youtube} scripts (EACH 500-800 words)\nNewsletter: ${_c.newsletter} (EACH 1000-1200 words)\nLinkedIn: ${_c.linkedin} posts (EACH 200-300 words)\nTweets: ${_c.twitter} tweets\nBlog: ${_c.blog} posts (EACH 700-900 words)\nImages: ${_c.images} prompts\nBacklinks: ${_c.backlinks}\nPodcast: 1 script (300 sec / 5 min)\n\nMy persona: ${nm||'Creator'}\nAudience: ${au||'general'}\nTone: ${tn||'professional'}\n\nKeywords: ${_kw}${_blCtx}\n\n⚡ AEO/SEO/GEO OPTIMIZATION (Blog Posts & Newsletters):\n\nBLOG POSTS — Optimize for SEO, AEO & GEO:\n• featured_snippet: 40-60 word direct answer paragraph for Google Featured Snippets / AI Overviews. Start with a clear definition or direct answer to the topic question.\n• tldr: 2-3 sentence summary for AI answer engines and quick readers.\n• h2_headings: 5 keyword-rich H2 subheadings using target keywords naturally.\n• body: Full article (700-900 words). Use H2/H3 structure. Include statistics with source attribution inline. Write with E-E-A-T signals (Experience, Expertise, Authoritativeness, Trustworthiness).\n• faq: 3-5 Q&A pairs for People Also Ask and FAQ schema. Each answer 2-3 sentences, concise and direct.\n• citations: 3-5 {claim, source} objects — factual claims paired with credible sources (e.g. \"HubSpot 2024\", \"Statista\", \"Harvard Business Review\").\n• schema_type: Suggested schema.org type (e.g. \"Article\", \"HowTo\", \"FAQPage\", \"BlogPosting\").\n\nNEWSLETTERS — Optimize for AEO & GEO:\n• tldr: 2-3 sentence summary at the top for scanners.\n• body: Full newsletter (1000-1200 words). Use bullet points, numbered lists, bold key phrases. Include cited statistics.\n• faq: 3 Q&A pairs — common audience questions about the topic.\n• citations: 3 {claim, source} — data points with source attribution.\n\nReturn JSON ONLY. For each backlink, you MUST include an "ahref" field with a complete executable HTML anchor tag: <a href="URL" target="_blank" rel="noopener noreferrer">ANCHOR_TEXT</a>\n\nArrays must have EXACT counts. Make each item LONG. Write full, detailed content.\n\nJSON:\n{\n  youtube_scripts: [{title, hook, body, cta}],\n  newsletters: [{subject, preview_text, tldr, body, faq: [{q, a}], citations: [{claim, source}], references: [{title, url, source}]}],\n  linkedin_posts: [string],\n  twitter_thread: [string],\n  blog_posts: [{title, meta_description, featured_snippet, tldr, h2_headings: [5], body, key_takeaways: [3], faq: [{q, a}], citations: [{claim, source}], schema_type}],\n  tags: [10],\n  image_prompts: [{thumbnail, social, blog_hero}],\n  seo_keywords: {primary: [3], secondary: [5]},\n  content_angles: [3],\n  auto_publish: {suggested_hashtags: [5], caption: string, call_to_action: string},\n  research_links: [{title, url, source, snippet}],\n  backlinks: [{title, url, text, anchor_text, ahref}],\n  podcast_script: {title, duration_minutes: 5, host1, host2, script}\n}`;
+    return `\u26a0\ufe0f CRITICAL REQUIREMENT: Generate the EXACT item counts specified below. Never truncate, abbreviate, or stop early. Fill every array completely.
+
+EXACT COUNTS REQUIRED:
+• YouTube: ${_c.youtube} scripts (EACH 500-800 words)
+• Newsletter: ${_c.newsletter} (EACH 1000-1200 words)
+• LinkedIn: ${_c.linkedin} long-form posts (EACH 200-350 words)
+• Tweets: ${_c.twitter} standalone tweets
+• Blog: ${_c.blog} complete blog posts (EACH 700-900 words)
+• Images: ${_c.images} prompt sets
+• Backlinks: ${_c.backlinks} backlink placements
+• Podcast: 1 script (300 sec / 5 min)
+
+My persona: ${nm||'Creator'}
+Audience: ${au||'general'}
+Tone: ${tn||'professional'}
+
+Keywords: ${_kw}${_blCtx}
+
+⚡ LINKEDIN POSTS — Professional Thought Leadership (200-350 words EACH):
+• Must be full, comprehensive LinkedIn thought-leadership posts, NOT short tweets.
+• Structure:
+  - Strong 1-2 line hook to stop the scroll.
+  - Multi-paragraph body with clean spacing and line breaks.
+  - 3-5 bullet point takeaways, actionable tips, or framework insights.
+  - Engaging closing question or call-to-action inviting comments and discussion.
+• In "linkedin_posts", output EXACTLY ${_c.linkedin} full post strings.
+
+⚡ BLOG POSTS — Optimize for SEO, AEO & GEO (${_c.blog} complete posts):
+• Output EXACTLY ${_c.blog} complete blog post objects in the "blog_posts" array.
+• featured_snippet: 40-60 word direct answer paragraph for Google Featured Snippets / AI Overviews. Start with a clear definition or direct answer to the topic question.
+• tldr: 2-3 sentence summary for AI answer engines and quick readers.
+• h2_headings: 5 keyword-rich H2 subheadings using target keywords naturally.
+• body: Full article (700-900 words). Use H2/H3 structure. Include statistics with source attribution inline. Write with E-E-A-T signals (Experience, Expertise, Authoritativeness, Trustworthiness).
+• faq: 3-5 Q&A pairs for People Also Ask and FAQ schema. Each answer 2-3 sentences, concise and direct.
+• citations: 3-5 {claim, source} objects — factual claims paired with credible sources (e.g. "HubSpot 2024", "Statista", "Harvard Business Review").
+• schema_type: Suggested schema.org type (e.g. "Article", "HowTo", "FAQPage", "BlogPosting").
+
+⚡ NEWSLETTERS — Optimize for AEO & GEO:
+• tldr: 2-3 sentence summary at the top for scanners.
+• body: Full newsletter (1000-1200 words). Use bullet points, numbered lists, bold key phrases. Include cited statistics.
+• faq: 3 Q&A pairs — common audience questions about the topic.
+• citations: 3 {claim, source} — data points with source attribution.
+
+⚡ BACKLINKS & IMAGE PROMPTS:
+• backlinks: MUST contain EXACTLY ${_c.backlinks} objects. For each backlink, you MUST include an "ahref" field with a complete executable HTML anchor tag: <a href="URL" target="_blank" rel="noopener noreferrer">ANCHOR_TEXT</a>
+• image_prompts: MUST contain EXACTLY ${_c.images} objects ({thumbnail, social, blog_hero}).
+
+Return JSON ONLY without Markdown code fences. Arrays must have EXACT counts. Make each item LONG. Write full, detailed content.
+
+JSON:
+{
+  youtube_scripts: [{title, hook, body, cta}],
+  newsletters: [{subject, preview_text, tldr, body, faq: [{q, a}], citations: [{claim, source}], references: [{title, url, source}]}],
+  linkedin_posts: [string],
+  twitter_thread: [string],
+  blog_posts: [{title, meta_description, featured_snippet, tldr, h2_headings: [5], body, key_takeaways: [3], faq: [{q, a}], citations: [{claim, source}], schema_type}],
+  tags: [10],
+  image_prompts: [{thumbnail, social, blog_hero}],
+  seo_keywords: {primary: [3], secondary: [5]},
+  content_angles: [3],
+  auto_publish: {suggested_hashtags: [5], caption: string, call_to_action: string},
+  research_links: [{title, url, source, snippet}],
+  backlinks: [{title, url, text, anchor_text, ahref}],
+  podcast_script: {title, duration_minutes: 5, host1, host2, script}
+}`;
   };
 
   /* --- TABS --- */
@@ -771,7 +835,7 @@
         if (rl.length) _rc = '\n\nRECENT RESEARCH/NEWS:\n' + rl.map((r,i) => `${i+1}. ${r.title} - ${r.source} (${r.url})`).join('\n');
         spg(`Generating: ${ct.youtube} YouTube, ${ct.newsletter} Newsletter, ${ct.linkedin} LinkedIn, ${ct.twitter} Tweets, ${ct.blog} Blogs, ${ct.backlinks} Backlinks...`);
         var _sp = _pp(nm, au, tn, ct, kw, bl);
-        var _up = `Raw idea / voice note:\n\n${qi}${_rc}\n\nReturn ONLY the complete JSON object with ALL keys as specified. Each backlink MUST include an "ahref" field with a complete <a href="..."> tag.`;
+        var _up = `Raw idea / voice note:\n\n${qi}${_rc}\n\nCRITICAL: Return ONLY the complete JSON object with EXACT array counts (specifically: exactly ${ct.blog} complete blog posts in "blog_posts", exactly ${ct.backlinks} in "backlinks", exactly ${ct.images} in "image_prompts", exactly ${ct.linkedin} long-form posts in "linkedin_posts", etc.). Do NOT truncate, stop early, or summarize. Each backlink MUST include an "ahref" field with a complete <a href="..."> tag.`;
         var _resp = await fetch(_$k(6), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ input: _up, profile: _sp, model: _$k(7), token: _tok })

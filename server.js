@@ -90,8 +90,8 @@ app.post('/api/generate', async (req, res) => {
                 'X-Title': 'ContentGenPro'
             },
             body: JSON.stringify({
-                model: model || 'openai/gpt-4o-mini',
-                max_tokens: 16384,
+                model: 'google/gemini-3.5-flash-lite',
+                max_tokens: 32768,
                 messages: [
                     { role: 'system', content: profile },
                     { role: 'user', content: input }
