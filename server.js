@@ -54,6 +54,8 @@ app.post('/api/generate', async (req, res) => {
 
         // 1. Verify and deduct credit via WordPress if token is present
         let remainingCredits = null;
+        let isAdmin = false;
+        let userTier = null;
         if (token) {
             console.log('💳 Verifying & deducting user credit via WordPress...');
             const deductRes = await fetch(`${WP_SITE_URL}/wp-json/cgp/v1/deduct`, {
@@ -70,7 +72,9 @@ app.post('/api/generate', async (req, res) => {
                 });
             }
             remainingCredits = deductData.remaining;
-            console.log(`✅ Credit deducted. Remaining: ${remainingCredits}`);
+            isAdmin = !!deductData.is_admin;
+            userTier = deductData.tier || null;
+            console.log(`✅ Credit processed. Remaining: ${remainingCredits}, Admin: ${isAdmin}`);
         }
 
         // Check if API key exists
@@ -111,6 +115,8 @@ app.post('/api/generate', async (req, res) => {
 
         if (remainingCredits !== null) {
             data.remainingCredits = remainingCredits;
+            data.is_admin = isAdmin;
+            data.tier = userTier;
         }
 
         res.json(data);
