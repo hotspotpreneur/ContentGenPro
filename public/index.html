@@ -254,12 +254,245 @@
   const _IOp = [0,1,2,3,4,5,6,7];
   const _NLOp = [0,1,2];
 
+  /* --- KING'S ENGLISH & SANITIZER HELPERS --- */
+  const _matchCase = (orig, repl) => {
+    if (!orig) return repl;
+    if (orig === orig.toUpperCase()) return repl.toUpperCase();
+    if (orig[0] === orig[0].toUpperCase()) return repl.charAt(0).toUpperCase() + repl.slice(1);
+    return repl.toLowerCase();
+  };
+
+  const _cleanCharacters = (str) => {
+    if (!str || typeof str !== 'string') return str;
+    return str
+      .replace(/â€™|â€˜|â€²|â€\u0060|\u00e2\u20ac\u2122|\u00e2\u20ac\u02dc/g, "'")
+      .replace(/â€œ|â€\u009d|â€ |\u00e2\u20ac\u0153|\u00e2\u20ac\u009d/g, '"')
+      .replace(/â€(?=["'\w\s]|$)/g, '"')
+      .replace(/â€”|â€“|\u00e2\u20ac\u201d|\u00e2\u20ac\u201c/g, '—')
+      .replace(/â€¢|\u00e2\u20ac\u00a2/g, '•')
+      .replace(/â€¦|\u00e2\u20ac\u00a6/g, '…')
+      .replace(/Â\s*|\u00c2\u00a0|\u00c2/g, ' ')
+      .replace(/─+/g, (m) => '-'.repeat(m.length))
+      .replace(/[┌┐└┘├┤┬┴┼═║│]/g, '-')
+      .replace(/[ \t]{2,}/g, ' ');
+  };
+
+  const _removeAiFluff = (str) => {
+    if (!str || typeof str !== 'string') return str;
+    var s = str;
+    var prev;
+    do {
+      prev = s;
+      s = s.replace(/(?:^|[.!?]\s+)(?:In today's (?:fast-paced\s+)?(?:digital\s+)?(?:world|landscape|environment|age|era)|In an increasingly (?:digital|connected|fast-paced) world|In the fast-paced world of [^,.\n]+|In an era (?:where|of) [^,.\n]+)[,.]?\s*/gi, function(m) {
+        return m.startsWith('.') ? '. ' : (m.startsWith('!') ? '! ' : (m.startsWith('?') ? '? ' : ''));
+      });
+      s = s.replace(/(?:^|[.!?]\s+)(?:Without further ado|Let's dive in|Let's dive deep|Buckle up|Look no further)[,.:!]?\s*/gi, function(m) {
+        return m.startsWith('.') ? '. ' : (m.startsWith('!') ? '! ' : (m.startsWith('?') ? '? ' : ''));
+      });
+    } while (s !== prev);
+
+    s = s.replace(/\b(?:without further ado|let's dive (?:deep|in)|buckle up|look no further)[,.:!]?\s*/gi, '');
+    s = s.replace(/\bdelv(ing|ed|es|e)?\s+into\b/gi, function(m, suffix) {
+      if (suffix && /ing/i.test(suffix)) return _matchCase(m, 'exploring');
+      if (suffix && /ed/i.test(suffix)) return _matchCase(m, 'explored');
+      if (suffix && /es/i.test(suffix)) return _matchCase(m, 'explores');
+      return _matchCase(m, 'explore');
+    });
+
+    s = s.replace(/\b(?:stands?\s+as\s+)?a\s+testament\s+to\b/gi, function(m) { return _matchCase(m, 'evidence of'); });
+    s = s.replace(/\b(?:a|the)\s+rich\s+tapestry\s+of\b/gi, function(m) { return _matchCase(m, 'a diverse range of'); });
+    s = s.replace(/\brich\s+tapestry\s+of\b/gi, function(m) { return _matchCase(m, 'diverse range of'); });
+    s = s.replace(/\ba\s+beacon\s+(?:of|for)\b/gi, function(m) { return _matchCase(m, 'a leading example of'); });
+    s = s.replace(/\ba\s+game-?changer\b/gi, function(m) { return _matchCase(m, 'a breakthrough'); });
+    s = s.replace(/\bgame-?changing\b/gi, function(m) { return _matchCase(m, 'breakthrough'); });
+    s = s.replace(/\bunlock(?:ing|ed|s)?\s+(?:the\s+)?(?:full\s+)?potential\s+of\b/gi, function(m) { return _matchCase(m, 'maximise'); });
+    s = s.replace(/\bharness(?:ing)?\s+the\s+power\s+of\b/gi, function(m) { return _matchCase(m, 'leveraging'); });
+    s = s.replace(/\bnavigat(?:e|ing)\s+the\s+(?:complex\s+)?landscape\s+of\b/gi, function(m) { return _matchCase(m, 'navigating'); });
+    s = s.replace(/\bit\s+goes\s+without\s+saying\s+that\s*/gi, '');
+    s = s.replace(/\bit\s+is\s+important\s+to\s+remember\s+that\s*/gi, '');
+    s = s.replace(/\bit's\s+important\s+to\s+remember\s+that\s*/gi, '');
+    s = s.replace(/\bit\s+is\s+crucial\s+to\s+understand\s+that\s*/gi, '');
+    s = s.replace(/\bat\s+the\s+end\s+of\s+the\s+day[,]?\s*/gi, '');
+
+    s = s.replace(/\s+([,.:;?!])/g, '$1').replace(/\.{2,}/g, '.').trim();
+    if (s.length > 0 && /^[a-z]/.test(s)) {
+      s = s.charAt(0).toUpperCase() + s.slice(1);
+    }
+    return s;
+  };
+
+  const _UK_WORDS = [
+    [/optimize/i, 'optimise'], [/optimizing/i, 'optimising'], [/optimized/i, 'optimised'],
+    [/optimizer/i, 'optimiser'], [/optimizers/i, 'optimisers'], [/optimization/i, 'optimisation'], [/optimizations/i, 'optimisations'],
+    [/organize/i, 'organise'], [/organizing/i, 'organising'], [/organized/i, 'organised'],
+    [/organizer/i, 'organiser'], [/organizers/i, 'organisers'], [/organization/i, 'organisation'], [/organizations/i, 'organisations'],
+    [/prioritize/i, 'prioritise'], [/prioritizing/i, 'prioritising'], [/prioritized/i, 'prioritised'], [/prioritization/i, 'prioritisation'],
+    [/realize/i, 'realise'], [/realizing/i, 'realising'], [/realized/i, 'realised'], [/realization/i, 'realisation'],
+    [/recognize/i, 'recognise'], [/recognizing/i, 'recognising'], [/recognized/i, 'recognised'],
+    [/analyze/i, 'analyse'], [/analyzing/i, 'analysing'], [/analyzed/i, 'analysed'], [/analyzer/i, 'analyser'], [/analyzers/i, 'analysers'],
+    [/specialize/i, 'specialise'], [/specializing/i, 'specialising'], [/specialized/i, 'specialised'], [/specialization/i, 'specialisation'],
+    [/customize/i, 'customise'], [/customizing/i, 'customising'], [/customized/i, 'customised'], [/customization/i, 'customisation'],
+    [/maximize/i, 'maximise'], [/maximizing/i, 'maximising'], [/maximized/i, 'maximised'], [/maximization/i, 'maximisation'],
+    [/minimize/i, 'minimise'], [/minimizing/i, 'minimising'], [/minimized/i, 'minimised'], [/minimization/i, 'minimisation'],
+    [/utilize/i, 'utilise'], [/utilizing/i, 'utilising'], [/utilized/i, 'utilised'], [/utilization/i, 'utilisation'],
+    [/monetize/i, 'monetise'], [/monetizing/i, 'monetising'], [/monetized/i, 'monetised'], [/monetization/i, 'monetisation'],
+    [/emphasize/i, 'emphasise'], [/emphasizing/i, 'emphasising'], [/emphasized/i, 'emphasised'],
+    [/categorize/i, 'categorise'], [/categorizing/i, 'categorising'], [/categorized/i, 'categorised'],
+    [/standardize/i, 'standardise'], [/standardizing/i, 'standardising'], [/standardized/i, 'standardised'], [/standardization/i, 'standardisation'],
+    [/modernize/i, 'modernise'], [/modernizing/i, 'modernising'], [/modernized/i, 'modernised'],
+    [/capitalize/i, 'capitalise'], [/capitalizing/i, 'capitalising'], [/capitalized/i, 'capitalised'],
+    [/visualize/i, 'visualise'], [/visualizing/i, 'visualising'], [/visualized/i, 'visualised'], [/visualization/i, 'visualisation'],
+    [/revolutionize/i, 'revolutionise'], [/revolutionizing/i, 'revolutionising'], [/revolutionized/i, 'revolutionised'],
+    [/personalize/i, 'personalise'], [/personalizing/i, 'personalising'], [/personalized/i, 'personalised'], [/personalization/i, 'personalisation'],
+    [/summarize/i, 'summarise'], [/summarizing/i, 'summarising'], [/summarized/i, 'summarised'],
+    [/incentivize/i, 'incentivise'], [/incentivizing/i, 'incentivising'], [/incentivized/i, 'incentivised'],
+    [/authorize/i, 'authorise'], [/authorizing/i, 'authorising'], [/authorized/i, 'authorised'], [/authorization/i, 'authorisation'],
+    [/digitize/i, 'digitise'], [/digitizing/i, 'digitising'], [/digitized/i, 'digitised'],
+    [/familiarize/i, 'familiarise'], [/familiarizing/i, 'familiarising'], [/familiarized/i, 'familiarised'],
+    [/colors/i, 'colours'], [/colorful/i, 'colourful'], [/colorless/i, 'colourless'], [/color/i, 'colour'],
+    [/flavors/i, 'flavours'], [/flavorful/i, 'flavourful'], [/flavor/i, 'flavour'],
+    [/honors/i, 'honours'], [/honorable/i, 'honourable'], [/honor/i, 'honour'],
+    [/humors/i, 'humours'], [/humor/i, 'humour'],
+    [/behaviors/i, 'behaviours'], [/behavioral/i, 'behavioural'], [/behavior/i, 'behaviour'],
+    [/neighbors/i, 'neighbours'], [/neighborhood/i, 'neighbourhood'], [/neighboring/i, 'neighbouring'], [/neighbor/i, 'neighbour'],
+    [/rumors/i, 'rumours'], [/rumor/i, 'rumour'],
+    [/labors/i, 'labours'], [/laborer/i, 'labourer'], [/laborers/i, 'labourers'], [/labor/i, 'labour'],
+    [/vigor/i, 'vigour'], [/glamor/i, 'glamour'],
+    [/favorites/i, 'favourites'], [/favorite/i, 'favourite'],
+    [/favorable/i, 'favourable'], [/favorably/i, 'favourably'], [/favors/i, 'favours'], [/favor/i, 'favour'],
+    [/centers/i, 'centres'], [/centered/i, 'centred'], [/centering/i, 'centring'], [/center/i, 'centre'],
+    [/theaters/i, 'theatres'], [/theater/i, 'theatre'],
+    [/meters/i, 'metres'], [/meter/i, 'metre'],
+    [/fibers/i, 'fibres'], [/fiber/i, 'fibre'],
+    [/catalogs/i, 'catalogues'], [/catalog/i, 'catalogue'],
+    [/dialogs/i, 'dialogues'], [/dialog/i, 'dialogue'],
+    [/analogs/i, 'analogues'], [/analog/i, 'analogue'],
+    [/defenses/i, 'defences'], [/defenseless/i, 'defenceless'], [/defense/i, 'defence'],
+    [/offenses/i, 'offences'], [/offenseless/i, 'offenceless'], [/offense/i, 'offence'],
+    [/pretenses/i, 'pretences'], [/pretense/i, 'pretence'],
+    [/traveled/i, 'travelled'], [/traveling/i, 'travelling'], [/traveler/i, 'traveller'], [/travelers/i, 'travellers'],
+    [/canceled/i, 'cancelled'], [/canceling/i, 'cancelling'],
+    [/modeled/i, 'modelled'], [/modeling/i, 'modelling'],
+    [/channeled/i, 'channelled'], [/channeling/i, 'channelling'],
+    [/signaled/i, 'signalled'], [/signaling/i, 'signalling']
+  ];
+
+  const _toKingsEnglish = (str) => {
+    if (!str || typeof str !== 'string') return str;
+    var s = str;
+    for (var i = 0; i < _UK_WORDS.length; i++) {
+      var rx = new RegExp('\\b' + _UK_WORDS[i][0].source + '\\b', 'gi');
+      var target = _UK_WORDS[i][1];
+      s = s.replace(rx, function(m) {
+        return _matchCase(m, target);
+      });
+    }
+    return s;
+  };
+
+  const _cleanKingsEnglish = (str) => {
+    if (typeof str !== 'string') return str;
+    return _toKingsEnglish(_removeAiFluff(_cleanCharacters(str)));
+  };
+
+  const _cleanContentObj = (obj) => {
+    if (!obj) return obj;
+    if (typeof obj === 'string') return _cleanKingsEnglish(obj);
+    if (Array.isArray(obj)) return obj.map(_cleanContentObj);
+    if (typeof obj === 'object') {
+      var res = {};
+      for (var k in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, k)) {
+          if (k === 'url' || k === 'schema_type') {
+            res[k] = obj[k];
+          } else if (k === 'ahref') {
+            res[k] = typeof obj[k] === 'string' ? obj[k].replace(/>([^<]+)</g, (m, g1) => '>' + _cleanKingsEnglish(g1) + '<') : obj[k];
+          } else {
+            res[k] = _cleanContentObj(obj[k]);
+          }
+        }
+      }
+      return res;
+    }
+    return obj;
+  };
+
+  /* --- CONVERT MARKDOWN / MULTILINE TEXT TO WORD HTML --- */
+  const _textToWordHtml = (text) => {
+    if (!text || typeof text !== 'string') return '';
+    var cleaned = _cleanKingsEnglish(text);
+    var lines = cleaned.replace(/\r\n/g, '\n').split('\n');
+    var html = [];
+    var inUl = false, inOl = false;
+
+    var closeLists = () => {
+      if (inUl) { html.push('</ul>'); inUl = false; }
+      if (inOl) { html.push('</ol>'); inOl = false; }
+    };
+
+    var inlineFmt = (s) => {
+      return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\u0060([^\u0060]+)\u0060/g, '<code>$1</code>');
+    };
+
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line) { closeLists(); continue; }
+
+      var h3M = line.match(/^###\s+(.*)/);
+      var h2M = line.match(/^##\s+(.*)/);
+      var h1M = line.match(/^#\s+(.*)/);
+
+      if (h3M) { closeLists(); html.push(`<h3>${inlineFmt(h3M[1])}</h3>`); continue; }
+      if (h2M) { closeLists(); html.push(`<h2>${inlineFmt(h2M[1])}</h2>`); continue; }
+      if (h1M) { closeLists(); html.push(`<h1>${inlineFmt(h1M[1])}</h1>`); continue; }
+
+      var bqM = line.match(/^>\s*(.*)/);
+      if (bqM) { closeLists(); html.push(`<blockquote>${inlineFmt(bqM[1])}</blockquote>`); continue; }
+
+      var ulM = line.match(/^[-*•]\s+(.*)/);
+      if (ulM) {
+        if (inOl) { html.push('</ol>'); inOl = false; }
+        if (!inUl) { html.push('<ul>'); inUl = true; }
+        html.push(`<li>${inlineFmt(ulM[1])}</li>`);
+        continue;
+      }
+
+      var olM = line.match(/^\d+\.\s+(.*)/);
+      if (olM) {
+        if (inUl) { html.push('</ul>'); inUl = false; }
+        if (!inOl) { html.push('<ol>'); inOl = true; }
+        html.push(`<li>${inlineFmt(olM[1])}</li>`);
+        continue;
+      }
+
+      closeLists();
+      html.push(`<p>${inlineFmt(line)}</p>`);
+    }
+    closeLists();
+    return html.join('\n');
+  };
+
   /* --- PROFILE PROMPT --- */
   const _pp = (nm, au, tn, ct, kw, bl) => {
     var _c = ct || _DC;
     var _kw = kw && kw.length ? kw.join(', ') : 'none specified';
     var _blCtx = bl && bl.length ? '\n\nTARGET BACKLINK URLS:\n' + bl.map((b,i) => `${i+1}. URL: ${b.url} - Topic: ${b.topic||'general'}`).join('\n') : '';
-    return `\u26a0\ufe0f CRITICAL REQUIREMENT: Generate the EXACT item counts specified below. Never truncate, abbreviate, or stop early. Fill every array completely.
+    return `\u26a0\ufe0f CRITICAL REQUIREMENT: Generate the EXACT item counts specified below.
+
+⚡ LANGUAGE & EDITORIAL RULES — KING'S ENGLISH & ZERO AI FLUFF:
+• WRITE STRICTLY IN KING'S ENGLISH (BRITISH ENGLISH):
+  - Use British English spelling throughout ALL content: colour, optimise, organise, specialise, analyse, prioritise, maximise, minimise, centre, theatre, metre, catalogue, dialogue, programme, defence, licence (noun), behaviour, flavour, honour, labour, neighbour, travelling, cancelled.
+  - NEVER use American spellings: do NOT write color, optimize, organize, center, analyze, program, defense, traveling.
+  - Punctuation: Strict King's English punctuation rules. Punctuation belongs outside quotation marks unless part of the quoted matter ('like this', not 'like this,'). Prefer single quotes for terms and double quotes only for nested direct quotes.
+• STRICTLY FORBIDDEN — ZERO AI FLUFF & CLICHÉS:
+  - NEVER use generic AI filler or clichés: "In today's fast-paced digital world", "In today's digital age", "In an era of", "delve into", "dive deep", "rich tapestry", "a testament to", "beacon of", "game-changer", "without further ado", "look no further", "unlock your potential", "navigating the landscape", "it goes without saying", "at the end of the day".
+  - Write punchy, authoritative, substantive copy with direct value from the first word. No filler introductions or filler conclusions. Never truncate, abbreviate, or stop early. Fill every array completely.
 
 EXACT COUNTS REQUIRED:
 • YouTube: ${_c.youtube} scripts (EACH 500-800 words)
@@ -694,61 +927,201 @@ JSON:
 
   /* --- BUILD WORD HTML --- */
   const _bwh = (qt, pn) => {
-    var _b = `<h1 style="color:#1a1a1a;font-family:Arial,sans-serif">${pn || 'ContentGenPro Export'}</h1>`;
-    (qt.youtube_scripts||[]).forEach((s,i) => { _b += `<h2>YouTube Script ${i+1}: ${s.title||''}</h2><p><strong>Hook:</strong> ${s.hook||''}</p><p>${s.body||''}</p><p><strong>CTA:</strong> ${s.cta||''}</p><hr/>`; });
-    (qt.newsletters||[]).forEach((n,i) => { _b += `<h2>Newsletter ${i+1}: ${n.subject||''}</h2>${n.tldr?'<p><em><strong>TL;DR:</strong> '+n.tldr+'</em></p>':''}<p>${n.body||''}</p>${(n.faq||[]).length?'<h3>FAQ</h3>'+n.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(n.citations||[]).length?'<h3>Citations</h3>'+n.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}<hr/>`; });
-    (qt.linkedin_posts||[]).forEach((p,i) => { _b += `<h2>LinkedIn Post ${i+1}</h2><p>${p}</p><hr/>`; });
-    if (qt.twitter_thread&&qt.twitter_thread.length) { _b += `<h2>Twitter Thread</h2>`; qt.twitter_thread.forEach((t,i) => { _b += `<p><strong>Tweet ${i+1}:</strong> ${t}</p>`; }); _b += `<hr/>`; }
-    (qt.blog_posts||[]).forEach((bp,i) => { _b += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2><p><em>${bp.meta_description||''}</em></p>${bp.featured_snippet?'<div style="background:#f0f8ff;border-left:4px solid #0066cc;padding:12px;margin:12px 0"><strong>Featured Snippet:</strong> '+bp.featured_snippet+'</div>':''}${bp.tldr?'<p><strong>TL;DR:</strong> <em>'+bp.tldr+'</em></p>':''}${bp.schema_type?'<p><strong>Schema Type:</strong> '+bp.schema_type+'</p>':''}<p>${bp.body||''}</p>${(bp.faq||[]).length?'<h3>FAQ — People Also Ask</h3>'+bp.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(bp.citations||[]).length?'<h3>Citations & Sources</h3>'+bp.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}<hr/>`; });
-    (qt.backlinks||[]).forEach((bl,i) => {
-      var _ah = bl.ahref || `<a href="${bl.url||'#'}" target="_blank" rel="noopener noreferrer">${bl.anchor_text||'click here'}</a>`;
-      _b += `<h2>Backlink ${i+1}: ${bl.title||''}</h2><p><strong>URL:</strong> ${bl.url||''}</p><p><strong>Anchor:</strong> ${bl.anchor_text||''}</p><p><strong>AHREF:</strong> ${_ah}</p><p>${bl.text||''}</p><hr/>`;
+    var _title = pn || 'ContentGenPro Export';
+    var _b = `<h1 style="color:#0d6e4e;font-family:Calibri,Arial,sans-serif">${_title}</h1>`;
+
+    (qt.youtube_scripts||[]).forEach((s,i) => {
+      _b += `<h2>YouTube Script ${i+1}: ${s.title||''}</h2>`;
+      if (s.hook) _b += `<p><strong>Hook:</strong> ${s.hook}</p>`;
+      _b += _textToWordHtml(s.body||'');
+      if (s.cta) _b += `<p><strong>CTA:</strong> ${s.cta}</p>`;
+      _b += `<hr/>`;
     });
-    if (qt.podcast_script) { _b += `<h2>Podcast: ${qt.podcast_script.title||''}</h2><p><strong>Duration:</strong> ${qt.podcast_script.duration_minutes||5} min | <strong>Hosts:</strong> ${qt.podcast_script.host1||'Host 1'} &amp; ${qt.podcast_script.host2||'Host 2'}</p><p>${qt.podcast_script.script||''}</p><hr/>`; }
-    if (qt.tags&&qt.tags.length) { _b += `<h2>Tags</h2><p>${qt.tags.join(', ')}</p>`; }
-    return `<!DOCTYPE html><html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>${pn||'Content'}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#1a1a1a;line-height:1.6}h1{color:#0a6}h2{color:#333;border-bottom:1px solid #ccc;padding-bottom:4px}hr{border:none;border-top:1px solid #eee;margin:20px 0}</style></head><body>${_b}</body></html>`;
+
+    (qt.newsletters||[]).forEach((n,i) => {
+      _b += `<h2>Newsletter ${i+1}: ${n.subject||''}</h2>`;
+      if (n.tldr) _b += `<div class="callout"><strong>TL;DR:</strong> ${n.tldr}</div>`;
+      _b += _textToWordHtml(n.body||'');
+      if (n.faq&&n.faq.length) {
+        _b += `<h3>Frequently Asked Questions</h3>`;
+        n.faq.forEach(f => { _b += `<p><strong>Q: ${f.q}</strong><br/>A: ${f.a}</p>`; });
+      }
+      if (n.citations&&n.citations.length) {
+        _b += `<h3>Citations &amp; Sources</h3><ul>`;
+        n.citations.forEach(c => { _b += `<li>"${c.claim}" &mdash; <em>${c.source}</em></li>`; });
+        _b += `</ul>`;
+      }
+      _b += `<hr/>`;
+    });
+
+    (qt.linkedin_posts||[]).forEach((p,i) => {
+      _b += `<h2>LinkedIn Post ${i+1}</h2>`;
+      _b += _textToWordHtml(p||'');
+      _b += `<hr/>`;
+    });
+
+    if (qt.twitter_thread&&qt.twitter_thread.length) {
+      _b += `<h2>Twitter Thread (${qt.twitter_thread.length} Tweets)</h2><ol>`;
+      qt.twitter_thread.forEach((t,i) => { _b += `<li>${t}</li>`; });
+      _b += `</ol><hr/>`;
+    }
+
+    (qt.blog_posts||[]).forEach((bp,i) => {
+      _b += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2>`;
+      if (bp.meta_description) _b += `<p class="meta-tag"><strong>Meta Description:</strong> ${bp.meta_description}</p>`;
+      if (bp.schema_type) _b += `<p class="meta-tag"><strong>Schema Type:</strong> <code>${bp.schema_type}</code></p>`;
+      if (bp.featured_snippet) _b += `<div class="callout"><strong>Featured Snippet:</strong> ${bp.featured_snippet}</div>`;
+      if (bp.tldr) _b += `<div class="callout"><strong>TL;DR:</strong> ${bp.tldr}</div>`;
+      _b += _textToWordHtml(bp.body||'');
+      if (bp.key_takeaways&&bp.key_takeaways.length) {
+        _b += `<h3>Key Takeaways</h3><ul>`;
+        bp.key_takeaways.forEach(k => { _b += `<li>${k}</li>`; });
+        _b += `</ul>`;
+      }
+      if (bp.faq&&bp.faq.length) {
+        _b += `<h3>FAQ &mdash; People Also Ask</h3>`;
+        bp.faq.forEach(f => { _b += `<p><strong>Q: ${f.q}</strong><br/>A: ${f.a}</p>`; });
+      }
+      if (bp.citations&&bp.citations.length) {
+        _b += `<h3>Citations &amp; Sources</h3><ul>`;
+        bp.citations.forEach(c => { _b += `<li>"${c.claim}" &mdash; <em>${c.source}</em></li>`; });
+        _b += `</ul>`;
+      }
+      _b += `<hr/>`;
+    });
+
+    if (qt.image_prompts&&qt.image_prompts.length) {
+      _b += `<h2>AI Image Prompts (${qt.image_prompts.length})</h2>`;
+      qt.image_prompts.forEach((img,i) => {
+        if (typeof img === 'string') {
+          _b += `<h3>Image Prompt ${i+1}</h3><p>${img}</p>`;
+        } else if (img.prompt) {
+          _b += `<h3>${img.title || ('Image Prompt ' + (i+1))}</h3><p><strong>Prompt:</strong> ${img.prompt}</p>`;
+          if (img.aspect_ratio) _b += `<p><strong>Aspect Ratio:</strong> ${img.aspect_ratio}</p>`;
+          if (img.style) _b += `<p><strong>Style:</strong> ${img.style}</p>`;
+        } else {
+          _b += `<h3>Image Set ${i+1}</h3>`;
+          if (img.thumbnail) _b += `<p><strong>Thumbnail:</strong> ${img.thumbnail}</p>`;
+          if (img.social) _b += `<p><strong>Social:</strong> ${img.social}</p>`;
+          if (img.blog_hero) _b += `<p><strong>Blog Hero:</strong> ${img.blog_hero}</p>`;
+        }
+      });
+      _b += `<hr/>`;
+    }
+
+    if (qt.backlinks&&qt.backlinks.length) {
+      _b += `<h2>Keyword-Rich Backlinks (${qt.backlinks.length})</h2>`;
+      qt.backlinks.forEach((bl,i) => {
+        var _ah = bl.ahref || `<a href="${bl.url||'#'}" target="_blank" rel="noopener noreferrer">${bl.anchor_text||'click here'}</a>`;
+        _b += `<h3>Backlink ${i+1}: ${bl.title||''}</h3>`;
+        _b += `<p><strong>Target URL:</strong> <a href="${bl.url||'#'}">${bl.url||''}</a></p>`;
+        if (bl.anchor_text) _b += `<p><strong>Anchor Text:</strong> ${bl.anchor_text}</p>`;
+        _b += `<p><strong>Executable AHREF:</strong></p><div class="ahref-box">${_ah.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`;
+        if (bl.text) _b += _textToWordHtml(bl.text);
+      });
+      _b += `<hr/>`;
+    }
+
+    if (qt.podcast_script) {
+      _b += `<h2>Podcast: ${qt.podcast_script.title||'Episode'}</h2>`;
+      _b += `<p class="meta-tag"><strong>Duration:</strong> ${qt.podcast_script.duration_minutes||5} min | <strong>Hosts:</strong> ${qt.podcast_script.host1||'Host 1'} &amp; ${qt.podcast_script.host2||'Host 2'}</p>`;
+      _b += _textToWordHtml(qt.podcast_script.script||'');
+      _b += `<hr/>`;
+    }
+
+    if (qt.tags&&qt.tags.length) {
+      _b += `<h2>Tags</h2><p>${qt.tags.join(', ')}</p>`;
+    }
+    if (qt.seo_keywords) {
+      _b += `<h2>SEO Keywords</h2>`;
+      if (qt.seo_keywords.primary&&qt.seo_keywords.primary.length) _b += `<p><strong>Primary:</strong> ${qt.seo_keywords.primary.join(', ')}</p>`;
+      if (qt.seo_keywords.secondary&&qt.seo_keywords.secondary.length) _b += `<p><strong>Secondary:</strong> ${qt.seo_keywords.secondary.join(', ')}</p>`;
+    }
+
+    return `<!DOCTYPE html><html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]--><title>${_title}</title><style>body{font-family:Calibri,'Segoe UI',Arial,sans-serif;margin:40px;color:#1a1a1a;line-height:1.6;font-size:11pt}h1{font-size:24pt;color:#0d6e4e;border-bottom:2pt solid #0d6e4e;padding-bottom:6pt;margin-bottom:16pt}h2{font-size:16pt;color:#1f2937;border-bottom:1pt solid #e5e7eb;padding-bottom:4pt;margin-top:24pt;margin-bottom:10pt;page-break-after:avoid}h3{font-size:13pt;color:#374151;margin-top:14pt;margin-bottom:6pt;page-break-after:avoid}p{font-size:11pt;line-height:1.6;margin:0 0 10pt 0}ul,ol{margin:0 0 12pt 20pt;padding:0}li{margin-bottom:4pt;font-size:11pt;line-height:1.6}blockquote{background:#f8fafc;border-left:4pt solid #0d6e4e;margin:10pt 0;padding:8pt 14pt;font-style:italic;color:#334155}.callout{background:#f0f9ff;border:1pt solid #bae6fd;border-left:4pt solid #0284c7;padding:10pt 14pt;margin:12pt 0;border-radius:4pt}.ahref-box{background:#f8fafc;border:1pt solid #e2e8f0;padding:8pt 12pt;font-family:Consolas,monospace;font-size:9.5pt;word-break:break-all;margin:6pt 0;color:#0f172a}.meta-tag{color:#64748b;font-size:10pt;font-style:italic;margin-bottom:6pt}hr{border:none;border-top:1pt solid #e5e7eb;margin:24pt 0}</style></head><body>${_b}</body></html>`;
   };
 
   /* --- BUILD PLAIN TEXT --- */
   const _bpt = (qt, pn, kw, bl) => {
     var _sep = '='.repeat(50);
+    var _div = '-'.repeat(40);
+    var _stripMd = (s) => (s||'').replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1').replace(/^#{1,4}\s+/gm, '');
     var _txt = `${pn || 'ContentGenPro Export'}\n${_sep}\nGenerated by ContentGenPro | contentgenpro.online\n${_sep}\n\n`;
     if (kw && kw.length) _txt += `TARGET KEYWORDS: ${kw.join(', ')}\n\n`;
     if (bl && bl.length) _txt += `BACKLINK URLS: ${bl.map(b => b.url).join(', ')}\n\n`;
+
     (qt.youtube_scripts||[]).forEach((s,i) => {
-      _txt += `${'─'.repeat(40)}\nYOUTUBE SCRIPT ${i+1}: ${s.title||''}\n${'─'.repeat(40)}\nHOOK: ${s.hook||''}\n\n${s.body||''}\n\nCTA: ${s.cta||''}\n\n`;
+      _txt += `${_div}\nYOUTUBE SCRIPT ${i+1}: ${s.title||''}\n${_div}\nHOOK: ${s.hook||''}\n\n${_stripMd(s.body||'')}\n\nCTA: ${s.cta||''}\n\n`;
     });
+
     (qt.newsletters||[]).forEach((n,i) => {
-      _txt += `${'─'.repeat(40)}\nNEWSLETTER ${i+1}: ${n.subject||''}\n${'─'.repeat(40)}\n${n.tldr?'TL;DR: '+n.tldr+'\n\n':''}${n.body||''}\n\n`;
-      if (n.faq&&n.faq.length) { _txt += `FAQ:\n`; n.faq.forEach((f,j) => { _txt += `Q${j+1}: ${f.q}\nA: ${f.a}\n\n`; }); }
-      if (n.citations&&n.citations.length) { _txt += `CITATIONS:\n`; n.citations.forEach(c => { _txt += `• "${c.claim}" — ${c.source}\n`; }); _txt += '\n'; }
+      _txt += `${_div}\nNEWSLETTER ${i+1}: ${n.subject||''}\n${_div}\n${n.tldr ? 'TL;DR: ' + n.tldr + '\n\n' : ''}${_stripMd(n.body||'')}\n\n`;
+      if (n.faq&&n.faq.length) {
+        _txt += `FAQ:\n`;
+        n.faq.forEach((f,j) => { _txt += `Q${j+1}: ${f.q}\nA: ${f.a}\n\n`; });
+      }
+      if (n.citations&&n.citations.length) {
+        _txt += `CITATIONS:\n`;
+        n.citations.forEach(c => { _txt += `- "${c.claim}" — ${c.source}\n`; });
+        _txt += '\n';
+      }
     });
+
     (qt.linkedin_posts||[]).forEach((p,i) => {
-      _txt += `${'─'.repeat(40)}\nLINKEDIN POST ${i+1}\n${'─'.repeat(40)}\n${p}\n\n`;
+      _txt += `${_div}\nLINKEDIN POST ${i+1}\n${_div}\n${_stripMd(p||'')}\n\n`;
     });
+
     if (qt.twitter_thread && qt.twitter_thread.length) {
-      _txt += `${'─'.repeat(40)}\nTWITTER THREAD (${qt.twitter_thread.length} tweets)\n${'─'.repeat(40)}\n`;
+      _txt += `${_div}\nTWITTER THREAD (${qt.twitter_thread.length} tweets)\n${_div}\n`;
       qt.twitter_thread.forEach((t,i) => { _txt += `[${i+1}] ${t}\n\n`; });
     }
+
     (qt.blog_posts||[]).forEach((bp,i) => {
-      _txt += `${'─'.repeat(40)}\nBLOG POST ${i+1}: ${bp.title||''}\n${'─'.repeat(40)}\nMETA: ${bp.meta_description||''}\n${bp.schema_type?'SCHEMA: '+bp.schema_type+'\n':''}${bp.featured_snippet?'\nFEATURED SNIPPET:\n'+bp.featured_snippet+'\n':''}${bp.tldr?'\nTL;DR: '+bp.tldr+'\n':''}\n${bp.body||''}\n\nKEY TAKEAWAYS: ${(bp.key_takeaways||[]).join(' | ')}\n\n`;
-      if (bp.faq&&bp.faq.length) { _txt += `FAQ — PEOPLE ALSO ASK:\n`; bp.faq.forEach((f,j) => { _txt += `Q${j+1}: ${f.q}\nA: ${f.a}\n\n`; }); }
-      if (bp.citations&&bp.citations.length) { _txt += `CITATIONS:\n`; bp.citations.forEach(c => { _txt += `• "${c.claim}" — ${c.source}\n`; }); _txt += '\n'; }
+      _txt += `${_div}\nBLOG POST ${i+1}: ${bp.title||''}\n${_div}\nMETA: ${bp.meta_description||''}\n${bp.schema_type?'SCHEMA: '+bp.schema_type+'\n':''}${bp.featured_snippet?'\nFEATURED SNIPPET:\n'+bp.featured_snippet+'\n':''}${bp.tldr?'\nTL;DR: '+bp.tldr+'\n':''}\n${_stripMd(bp.body||'')}\n\n${(bp.key_takeaways||[]).length ? 'KEY TAKEAWAYS: ' + bp.key_takeaways.join(' | ') + '\n\n' : ''}`;
+      if (bp.faq&&bp.faq.length) {
+        _txt += `FAQ — PEOPLE ALSO ASK:\n`;
+        bp.faq.forEach((f,j) => { _txt += `Q${j+1}: ${f.q}\nA: ${f.a}\n\n`; });
+      }
+      if (bp.citations&&bp.citations.length) {
+        _txt += `CITATIONS:\n`;
+        bp.citations.forEach(c => { _txt += `- "${c.claim}" — ${c.source}\n`; });
+        _txt += '\n';
+      }
     });
-    if (qt.backlinks && qt.backlinks.length) {
-      _txt += `${'─'.repeat(40)}\nBACKLINKS\n${'─'.repeat(40)}\n`;
-      qt.backlinks.forEach((b,i) => {
-        var _ah = b.ahref || `<a href="${b.url||'#'}" target="_blank" rel="noopener noreferrer">${b.anchor_text||'click here'}</a>`;
-        _txt += `[${i+1}] ${b.title||''}\nURL: ${b.url||''}\nAnchor: ${b.anchor_text||''}\nAHREF: ${_ah}\n${b.text||''}\n\n`;
+
+    if (qt.image_prompts && qt.image_prompts.length) {
+      _txt += `${_div}\nAI IMAGE PROMPTS (${qt.image_prompts.length})\n${_div}\n`;
+      qt.image_prompts.forEach((img,i) => {
+        if (typeof img === 'string') {
+          _txt += `[${i+1}] ${img}\n\n`;
+        } else if (img.prompt) {
+          _txt += `[${i+1}] ${img.title || ('Image Prompt ' + (i+1))}\nPROMPT: ${img.prompt}\n${img.aspect_ratio ? 'RATIO: ' + img.aspect_ratio + '\n' : ''}${img.style ? 'STYLE: ' + img.style + '\n' : ''}\n`;
+        } else {
+          _txt += `[${i+1}] Thumbnail: ${img.thumbnail||''}\nSocial: ${img.social||''}\nBlog Hero: ${img.blog_hero||''}\n\n`;
+        }
       });
     }
-    if (qt.podcast_script) {
-      _txt += `${'─'.repeat(40)}\nPODCAST: ${qt.podcast_script.title||''}\n${'─'.repeat(40)}\nDuration: ${qt.podcast_script.duration_minutes||5} min | Hosts: ${qt.podcast_script.host1||'Host 1'} & ${qt.podcast_script.host2||'Host 2'}\n\n${qt.podcast_script.script||''}\n\n`;
+
+    if (qt.backlinks && qt.backlinks.length) {
+      _txt += `${_div}\nBACKLINKS (${qt.backlinks.length})\n${_div}\n`;
+      qt.backlinks.forEach((b,i) => {
+        var _ah = b.ahref || `<a href="${b.url||'#'}" target="_blank" rel="noopener noreferrer">${b.anchor_text||'click here'}</a>`;
+        _txt += `[${i+1}] ${b.title||''}\nURL: ${b.url||''}\nAnchor: ${b.anchor_text||''}\nAHREF: ${_ah}\n${_stripMd(b.text||'')}\n\n`;
+      });
     }
-    if (qt.tags && qt.tags.length) { _txt += `${'─'.repeat(40)}\nTAGS\n${'─'.repeat(40)}\n${qt.tags.join(', ')}\n\n`; }
+
+    if (qt.podcast_script) {
+      _txt += `${_div}\nPODCAST: ${qt.podcast_script.title||''}\n${_div}\nDuration: ${qt.podcast_script.duration_minutes||5} min | Hosts: ${qt.podcast_script.host1||'Host 1'} & ${qt.podcast_script.host2||'Host 2'}\n\n${_stripMd(qt.podcast_script.script||'')}\n\n`;
+    }
+
+    if (qt.tags && qt.tags.length) {
+      _txt += `${_div}\nTAGS\n${_div}\n${qt.tags.join(', ')}\n\n`;
+    }
+
     if (qt.seo_keywords) {
       _txt += `SEO PRIMARY: ${(qt.seo_keywords.primary||[]).join(', ')}\nSEO SECONDARY: ${(qt.seo_keywords.secondary||[]).join(', ')}\n\n`;
     }
+
     return _txt;
   };
 
@@ -799,7 +1172,7 @@ JSON:
           var _sd = JSON.parse(_sv);
           spn(_sd.name || '');
           sqi(_sd.input || '');
-          sqt(_sd.output || null);
+          sqt(_sd.output ? _cleanContentObj(_sd.output) : null);
           sct(_sd.counts || {..._DC});
           skw(_sd.keywords || []);
           sbl(_sd.backlinks || []);
@@ -883,7 +1256,7 @@ JSON:
         if (rl.length) _rc = '\n\nRECENT RESEARCH/NEWS:\n' + rl.map((r,i) => `${i+1}. ${r.title} - ${r.source} (${r.url})`).join('\n');
         spg(`Generating: ${ct.youtube} YouTube, ${ct.newsletter} Newsletter, ${ct.linkedin} LinkedIn, ${ct.twitter} Tweets, ${ct.blog} Blogs, ${ct.images} Images, ${ct.backlinks} Backlinks...`);
         var _sp = _pp(nm, au, tn, ct, kw, bl);
-        var _up = `Raw idea / voice note:\n\n${qi}${_rc}\n\nCRITICAL: Return ONLY the complete JSON object with EXACT array counts (specifically: exactly ${ct.blog} complete blog posts in "blog_posts", exactly ${ct.backlinks} in "backlinks", exactly ${ct.images} individual prompts in "image_prompts", exactly ${ct.linkedin} long-form posts in "linkedin_posts", etc.). Do NOT truncate, stop early, or summarize. Each backlink MUST include an "ahref" field with a complete <a href="..."> tag.`;
+        var _up = `Raw idea / voice note:\n\n${qi}${_rc}\n\nCRITICAL: Return ONLY the complete JSON object with EXACT array counts (specifically: exactly ${ct.blog} complete blog posts in "blog_posts", exactly ${ct.backlinks} in "backlinks", exactly ${ct.images} individual prompts in "image_prompts", exactly ${ct.linkedin} long-form posts in "linkedin_posts", etc.). Do NOT truncate, stop early, or summarize. Each backlink MUST include an "ahref" field with a complete <a href="..."> tag.\n\nCRITICAL LANGUAGE INSTRUCTION: Write ALL content strictly in King's English (British English spelling and punctuation) with ZERO AI clichés or fluff phrases.`;
         var _resp = await fetch(_$k(6), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ input: _up, profile: _sp, model: _$k(7), token: _tok })
@@ -901,7 +1274,7 @@ JSON:
         }
         var _raw = _data.choices?.[0]?.message?.content;
         if (!_raw) throw new Error('No content received');
-        var _parsed = _ej(_raw);
+        var _parsed = _cleanContentObj(_ej(_raw));
         if (rl.length) _parsed.research_links = rl;
         if (bl.length && !_parsed.backlinks) {
           _parsed.backlinks = bl.map(b => ({
@@ -936,21 +1309,21 @@ JSON:
       }
 
       if (ef === 'csv') {
-        var _csvd = _gcsv(qt, pn);
+        var _csvd = '\ufeff' + _gcsv(qt, pn);
         if (!_csvd) return;
-        var _cb = new Blob([_csvd], { type: 'text/csv' });
+        var _cb = new Blob([_csvd], { type: 'text/csv;charset=utf-8' });
         var _ca = document.createElement('a'); _ca.href = URL.createObjectURL(_cb);
         _ca.download = (pn || 'content') + '.csv'; _ca.click(); URL.revokeObjectURL(_ca.href);
         return;
       }
 
-      var _content = '', _mime = 'text/plain', _fn = (pn || 'content_export');
+      var _content = '', _mime = 'text/plain;charset=utf-8', _fn = (pn || 'content_export');
 
       switch(ef) {
         case 'json':
-          _content = JSON.stringify(qt, null, 2); _mime = 'application/json'; _fn += '.json'; break;
+          _content = JSON.stringify(qt, null, 2); _mime = 'application/json;charset=utf-8'; _fn += '.json'; break;
         case 'markdown':
-          _content = `# ${pn || 'Content'}\n\n`;
+          _content = '\ufeff' + `# ${pn || 'Content'}\n\n`;
           if (kw.length) _content += `## Target Keywords\n${kw.join(', ')}\n\n`;
           if (bl.length) _content += `## Backlink URLs\n${bl.map(b => b.url).join('\n')}\n\n`;
           (qt.youtube_scripts||[]).forEach((s,i) => { _content += `## YouTube Script ${i+1}\n**${s.title||''}**\n\n${s.body||''}\n\n**CTA:** ${s.cta||''}\n\n`; });
@@ -975,35 +1348,15 @@ JSON:
           if (qt.tags&&qt.tags.length) _content += `## Tags\n${qt.tags.join(', ')}\n`;
           _fn += '.md'; break;
         case 'html':
-          _content = `<!DOCTYPE html><html><head><meta charset='utf-8'><title>${pn||'Content'}</title><style>body{font-family:Georgia,serif;max-width:900px;margin:40px auto;padding:0 20px;background:#fff;color:#1a1a1a;line-height:1.6}h1{color:#0a0}h2{color:#333;border-bottom:1px solid #ccc;padding-bottom:4px}.ahref-code{background:#f5f5f5;border:1px solid #ddd;padding:8px 12px;border-radius:4px;font-family:monospace;font-size:12px;word-break:break-all;margin:8px 0}</style></head><body>`;
-          _content += `<h1>${pn||'Content'}</h1>`;
-          if (kw.length) _content += `<h2>Target Keywords</h2><p>${kw.join(', ')}</p>`;
-          (qt.youtube_scripts||[]).forEach((s,i) => { _content += `<h2>YouTube Script ${i+1}</h2><h3>${s.title||''}</h3><p>${s.body||''}</p><p><strong>CTA:</strong> ${s.cta||''}</p>`; });
-          (qt.newsletters||[]).forEach((n,i) => { _content += `<h2>Newsletter ${i+1}: ${n.subject||''}</h2>${n.tldr?'<p><em><strong>TL;DR:</strong> '+n.tldr+'</em></p>':''}<p>${n.body||''}</p>${(n.faq||[]).length?'<h3>FAQ</h3>'+n.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(n.citations||[]).length?'<h3>Citations</h3>'+n.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}`; });
-          (qt.linkedin_posts||[]).forEach((lp,i) => { _content += `<h2>LinkedIn Post ${i+1}</h2><p>${lp}</p>`; });
-          _content += `<h2>Twitter Thread</h2>`;
-          (qt.twitter_thread||[]).forEach((tw,i) => { _content += `<p><strong>${i+1}.</strong> ${tw}</p>`; });
-          (qt.blog_posts||[]).forEach((bp,i) => { _content += `<h2>Blog Post ${i+1}: ${bp.title||''}</h2><em><p>${bp.meta_description||''}</p></em>${bp.schema_type?'<p><strong>Schema:</strong> <code>'+bp.schema_type+'</code></p>':''}${bp.featured_snippet?'<div style="background:#f0f8ff;border-left:4px solid #0066cc;padding:12px;margin:12px 0"><strong>Featured Snippet:</strong> '+bp.featured_snippet+'</div>':''}${bp.tldr?'<p><strong>TL;DR:</strong> <em>'+bp.tldr+'</em></p>':''}<p>${bp.body||''}</p>${(bp.faq||[]).length?'<h3>FAQ — People Also Ask</h3>'+bp.faq.map(f=>'<p><strong>Q: '+f.q+'</strong></p><p>A: '+f.a+'</p>').join(''):''}${(bp.citations||[]).length?'<h3>Citations & Sources</h3>'+bp.citations.map(c=>'<p>"'+c.claim+'" — <em>'+c.source+'</em></p>').join(''):''}`; });
-          (qt.image_prompts||[]).forEach((img,i) => {
-            var _t = (typeof img === 'object' && img.title) ? img.title : ('Image Prompt ' + (i+1));
-            var _pr = typeof img === 'string' ? img : (img.prompt || [img.thumbnail, img.social, img.blog_hero].filter(Boolean).join(' | '));
-            _content += `<h2>${_t}</h2><p><strong>Prompt:</strong> ${_pr}</p>${img.aspect_ratio?'<p><strong>Ratio:</strong> '+img.aspect_ratio+'</p>':''}${img.style?'<p><strong>Style:</strong> '+img.style+'</p>':''}`;
-          });
-          (qt.backlinks||[]).forEach((bk,i) => {
-            var _ah = bk.ahref || `<a href="${bk.url||'#'}" target="_blank" rel="noopener noreferrer">${bk.anchor_text||'click here'}</a>`;
-            _content += `<h2>Backlink ${i+1}: ${bk.title||''}</h2><p><strong>URL:</strong> ${bk.url||''}</p><p><strong>AHREF (executable):</strong></p><div class="ahref-code">${_ah.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div><p>${bk.text||''}</p>`;
-          });
-          if (qt.podcast_script) { _content += `<h2>Podcast: ${qt.podcast_script.title||''}</h2><p>${qt.podcast_script.script||''}</p>`; }
-          if (qt.tags&&qt.tags.length) { _content += `<h2>Tags</h2><p>${qt.tags.join(', ')}</p>`; }
-          _content += `</body></html>`; _fn += '.html'; break;
+          _content = '\ufeff' + _bwh(qt, pn); _mime = 'text/html;charset=utf-8'; _fn += '.html'; break;
         case 'txt':
-          _content = _bpt(qt, pn, kw, bl); _fn += '.txt'; break;
+          _content = '\ufeff' + _bpt(qt, pn, kw, bl); _mime = 'text/plain;charset=utf-8'; _fn += '.txt'; break;
         case 'ios_notes':
-          _content = _bpt(qt, pn, kw, bl); _fn += '_ios_notes.txt'; break;
+          _content = '\ufeff' + _bpt(qt, pn, kw, bl); _mime = 'text/plain;charset=utf-8'; _fn += '_ios_notes.txt'; break;
         case 'android_notes':
-          _content = _bpt(qt, pn, kw, bl); _fn += '_android_notes.txt'; break;
+          _content = '\ufeff' + _bpt(qt, pn, kw, bl); _mime = 'text/plain;charset=utf-8'; _fn += '_android_notes.txt'; break;
         case 'doc':
-          _content = _bwh(qt, pn); _mime = _$k(10); _fn += '.doc'; break;
+          _content = '\ufeff' + _bwh(qt, pn); _mime = _$k(10); _fn += '.doc'; break;
         case 'docx':
           _content = '\ufeff' + _bwh(qt, pn); _mime = _$k(11); _fn += '.docx'; break;
         default:
