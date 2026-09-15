@@ -49,6 +49,8 @@ app.get('/api/credits', async (req, res) => {
 // API ROUTE - Handle content generation with credit deduction
 // ============================================================
 app.post('/api/generate', async (req, res) => {
+    req.setTimeout(300000);
+    res.setTimeout(300000);
     try {
         const { input, profile, model, token } = req.body;
 

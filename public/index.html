@@ -576,52 +576,83 @@ JSON:
     return _tabs;
   };
 
-  /* --- EXTRACT JSON (with truncated JSON repair) --- */
+  /* --- EXTRACT JSON (with robust control-character & truncated JSON repair) --- */
   const _ej = (txt) => {
     if (!txt || !txt.trim()) throw new Error('Empty response from API');
-    try { return JSON.parse(txt); } catch(e) {}
-    var _cbm = txt.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (_cbm) { try { return JSON.parse(_cbm[1].trim()); } catch(e) {} }
-    // Try extracting a complete JSON object (first { to last })
-    var _jm = txt.match(/\{[\s\S]*\}/);
-    if (_jm) {
-      try {
-        var _cl = _jm[0].replace(/,\s*}/g, '}').replace(/,\s*]/g, ']');
-        return JSON.parse(_cl);
-      } catch(e) {}
-    }
-    // --- Robust JSON extraction & repair ---
-    var _si = txt.indexOf('{');
-    if (_si === -1) throw new Error('No JSON found in response. Raw preview: ' + txt.substring(0, 300));
-    var _s = txt.substring(_si);
 
-    // Track unescaped strings and bracket nesting stack
-    var _stack = [];
+    var _raw = txt.trim();
+    try { return JSON.parse(_raw); } catch(e) {}
+
+    var _cbm = _raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (_cbm) {
+      _raw = _cbm[1].trim();
+      try { return JSON.parse(_raw); } catch(e) {}
+    }
+
+    var _si = _raw.indexOf('{');
+    if (_si === -1) throw new Error('No JSON found in response. Raw preview: ' + txt.substring(0, 300));
+    _raw = _raw.substring(_si);
+
+    var _li = _raw.lastIndexOf('}');
+    if (_li !== -1 && _li > 0) {
+      var _sub = _raw.substring(0, _li + 1);
+      try { return JSON.parse(_sub); } catch(e) {}
+    }
+
+    var _cleaned = '';
     var _inStr = false, _esc = false;
-    for (var i = 0; i < _s.length; i++) {
-      var _ch = _s[i];
-      if (_esc) { _esc = false; continue; }
-      if (_ch === '\\' && _inStr) { _esc = true; continue; }
-      if (_ch === '"') { _inStr = !_inStr; continue; }
-      if (!_inStr) {
+    var _stack = [];
+
+    for (var i = 0; i < _raw.length; i++) {
+      var _ch = _raw[i];
+      if (_esc) { _cleaned += _ch; _esc = false; continue; }
+      if (_ch === '\\' && _inStr) { _cleaned += _ch; _esc = true; continue; }
+
+      if (_ch === '"') {
+        if (!_inStr) {
+          _inStr = true;
+          _cleaned += '"';
+        } else {
+          var _rest = _raw.substring(i + 1);
+          var _isEndQuote = /^\s*([,\}\]:])/.test(_rest);
+          if (_isEndQuote) {
+            _inStr = false;
+            _cleaned += '"';
+          } else {
+            _cleaned += '\\"';
+          }
+        }
+        continue;
+      }
+
+      if (_inStr) {
+        if (_ch === '\n') { _cleaned += '\\n'; continue; }
+        if (_ch === '\r') continue;
+        if (_ch === '\t') { _cleaned += '\\t'; continue; }
+      } else {
         if (_ch === '{' || _ch === '[') _stack.push(_ch);
         else if (_ch === '}' && _stack.length && _stack[_stack.length - 1] === '{') _stack.pop();
         else if (_ch === ']' && _stack.length && _stack[_stack.length - 1] === '[') _stack.pop();
       }
+      _cleaned += _ch;
     }
-    if (_inStr) _s += '"';
-    _s = _s.replace(/,\s*$/, '');
-    var _repair = _s;
+
+    try { return JSON.parse(_cleaned); } catch(e) {}
+
+    var _repair = _cleaned;
+    if (_inStr) _repair += '"';
+    _repair = _repair.replace(/,\s*$/, '');
+
     for (var k = _stack.length - 1; k >= 0; k--) {
       _repair += (_stack[k] === '{' ? '}' : ']');
     }
     _repair = _repair.replace(/,\s*([\}\]])/g, '$1');
+
     try { return JSON.parse(_repair); } catch(e) {}
 
-    // Fallback: truncate back to last complete quote-comma pair and close stack
-    var _lc = _s.lastIndexOf('",');
-    if (_lc > _s.length * 0.3) {
-      var _t = _s.substring(0, _lc + 1).replace(/,\s*$/, '');
+    var _lc = _repair.lastIndexOf('",');
+    if (_lc > _repair.length * 0.2) {
+      var _t = _repair.substring(0, _lc + 1).replace(/,\s*$/, '');
       var _tStack = [];
       var _tInStr = false, _tEsc = false;
       for (var m = 0; m < _t.length; m++) {
@@ -641,6 +672,7 @@ JSON:
       _t = _t.replace(/,\s*([\}\]])/g, '$1');
       try { return JSON.parse(_t); } catch(e) {}
     }
+
     throw new Error('Could not parse JSON (response may be malformed). Raw preview: ' + txt.substring(0, 300));
   };
 
